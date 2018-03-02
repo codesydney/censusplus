@@ -3,17 +3,17 @@
 
 {% block styles %}
 {{super()}}
-  <link rel="stylesheet" href="{{url_for('.static', filename='opendresult.css')}}">
+    <link rel="stylesheet" href="{{url_for('.static', filename='opendresult.css')}}">
 
     <link rel="stylesheet" href="{{ url_for('.static', filename='leaflet.css') }}" />
     <link rel="stylesheet" href="{{ url_for('.static', filename='leaflet.bookmarks.css') }}" />
     <link rel="stylesheet" href="{{ url_for('.static', filename='radio-button.css') }}" />  
-  <style>
-  #map {
+    <style>
+        #map {
             height: 600px;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;        }  
-  </style>
+    </style>
 {% endblock %}
 
 
@@ -58,6 +58,7 @@ onload="init('{{InputSuburb}}','{{mb_2016_code}}','{{InputSSC}}','{{stats}}');"
               <ul class="nav navbar-nav pull-right">
                   <li><a href="/main">Home</a></li>
                   <li><a href=#>Sign In</a></li>
+                  <li><a href="/main/about">About</a></li>
               </ul>
           </div>
       </div>
@@ -206,7 +207,7 @@ onload="init('{{InputSuburb}}','{{mb_2016_code}}','{{InputSSC}}','{{stats}}');"
 
 <footer id="footer">
   <p class="pad-lft-2 pad-rgt">
-    OPEND Project - A volunteer project of <a href="https://www.code.sydney" target="_blank">Code.Sydney</a><br>
+    CensusPlus Project - A volunteer project of <a href="https://www.code.sydney" target="_blank">Code.Sydney</a><br>
     This work is licensed under a <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank">Creative Commons Attribution License</a>
   </p>
 </footer>
