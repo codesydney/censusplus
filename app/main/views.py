@@ -20,14 +20,23 @@ from psycopg2.extensions import AsIs
 from contextlib import contextmanager
 
 # create database connection pool
+
 pool = ThreadedConnectionPool(
-    2, 5,
+    1, 2,
     database="d1l2hpefphgah3",
     user="zohdghtrwzqtiz",
     password="7b7df36d4c206a3601cbf365ec83462af9118e9abff84d18ab219ca31eb49d57",
     host="ec2-184-72-219-186.compute-1.amazonaws.com",
     port=5432)
-
+'''
+pool = ThreadedConnectionPool(
+    1, 2,
+    database="opend",
+    user="postgres",
+    password="123456",
+    host="localhost",
+    port=5432)
+'''
 # get the boundary name that suits each (tiled map) zoom level and its minimum value to colour in
 def get_boundary(zoom_level):
 
@@ -224,6 +233,12 @@ def autocomplete():
         addresslist.append(row['address'])
     return jsonify(matching_results=addresslist)
 
+#About page
+@main.route('/about', methods=['GET'])
+def about():
+    return render_template('about.html');
+
+
 #######################################
 # the following is for showing the map
 #######################################
@@ -306,7 +321,7 @@ def get_metadata():
           "WHERE lower(sequential_id) IN %s " \
           "ORDER BY sequential_id".format("g3", 'census_2016_data')
 
-    print("views.py::get_metadata: ",end=' ')
+    print("views.py::get_metadata: ",search_stats_tuple,end=' ')
     print(sql)
     
     #with db.engine as pg_cur:
