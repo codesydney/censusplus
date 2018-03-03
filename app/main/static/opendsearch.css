@@ -5,13 +5,10 @@ body
     padding-right: 10px;
 }
 
-.navbar-brand{
-    padding: 5px 15px;
-}
 .brand-icon{
     padding-top:0px; 
-    padding-left:10px; 
-    height:40px; 
+    padding-left:0px; 
+    height:20px; 
     width:auto;
 }
 
