@@ -6,6 +6,16 @@ body
     padding-right: 10px;
 }
 
+.navbar-brand{
+    padding: 5px 15px;
+}
+.brand-icon{
+    padding-top:0px; 
+    padding-left:10px; 
+    height:40px; 
+    width:auto;
+}
+
 .panel-heading-1
 {
     background-color: #5fa2dd !important;
