@@ -1,8 +1,8 @@
 "use strict";
 
-var bdyNamesUrl = "/main/get-bdy-names";
-var metadataUrl = "/main/get-metadata";
-var dataUrl = "/main/get-data";
+var bdyNamesUrl = "/get-bdy-names";
+var metadataUrl = "/get-metadata";
+var dataUrl = "/get-data";
 
 var map;
 var info;

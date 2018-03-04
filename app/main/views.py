@@ -503,10 +503,6 @@ def get_data():
 
     return Response(json.dumps(output_dict), mimetype='application/json')
 
-@main.route("/index2")
-def homepage():
-    return render_template('index.html')
-
 #########################################
 ## The above codes are for maps
 #########################################
