@@ -20,7 +20,7 @@ from psycopg2.extensions import AsIs
 from contextlib import contextmanager
 
 # create database connection pool
-
+'''
 pool = ThreadedConnectionPool(
     1, 3,
     database="d1l2hpefphgah3",
@@ -36,7 +36,7 @@ pool = ThreadedConnectionPool(
     password="123456",
     host="localhost",
     port=5432)
-'''
+
 # get the boundary name that suits each (tiled map) zoom level and its minimum value to colour in
 def get_boundary(zoom_level):
 
@@ -198,7 +198,7 @@ def index():
                                 population_list=population_list,
                                 mb_2016_code=mb_2016_code,
                                 InputSSC=InputSSC,
-                                stats="g1")                             
+                                mapstats="g1")                             
                                 
     #elif resultform.validate_on_submit() and resultform.Submit2.data:   
          #return redirect(url_for('main.index'))
@@ -269,14 +269,17 @@ def get_metadata():
     # census_year = request.args.get('c')
 
     # comma separated list of stat ids (i.e. sequential_ids) AND/OR equations contains stat ids
-    raw_stats = request.args.get('stats')
+    raw_stats = request.args.get('stats').upper()
+    searchStatsStr = "'"+raw_stats+"'"
+    search_stats = raw_stats.upper().split(",")
 
+    
     # get number of map classes
     try:
         num_classes = int(request.args.get('n'))
     except TypeError:
         num_classes = 7
-
+    '''
     # replace all maths operators to get list of all the stats we need to query for
     search_stats = raw_stats.upper().replace(" ", "").replace("(", "").replace(")", "") \
         .replace("+", ",").replace("-", ",").replace("/", ",").replace("*", ",").split(",")
@@ -287,10 +290,11 @@ def get_metadata():
 
     # print(equation_stats)
     # print(search_stats)
-
+    '''
     # get stats tuple for query input (convert to lower case)
-    search_stats_tuple = tuple([stat.lower() for stat in search_stats])
+    search_stats_tuple = tuple([stat for stat in search_stats])
 
+    '''
     # get all boundary names in all zoom levels
     boundary_names = list()
     test_names = list()
@@ -306,27 +310,25 @@ def get_metadata():
             boundary_names.append(bdy_dict)
 
             test_names.append(bdy_name)
+    '''
 
     # get stats metadata, including the all important table number and map type (raw values based or normalised by pop)
-    sql = "SELECT lower(sequential_id) AS id, " \
+    sql = "SELECT sequential_id AS id, " \
           "lower(table_number) AS \"table\", " \
           "replace(long_id, '_', ' ') AS description, " \
           "column_heading_description AS type, " \
-          "CASE WHEN lower(sequential_id) = '{0}' " \
-          "OR lower(long_id) LIKE '%%median%%' " \
-          "OR lower(long_id) LIKE '%%average%%' " \
-          "THEN 'values' " \
-          "ELSE 'percent' END AS maptype " \
-          "FROM {1}.metadata_stats " \
-          "WHERE lower(sequential_id) IN %s " \
-          "ORDER BY sequential_id".format("g3", 'census_2016_data')
+          "'values' as maptype " \
+          "FROM {0}.metadata_stats " \
+          "WHERE sequential_id IN %s " \
+          "ORDER BY sequential_id".format('census_2016_data')
 
-    print("views.py::get_metadata: ",search_stats_tuple,end=' ')
+    print("===>views.py::get_metadata: ",raw_stats)
     print(sql)
     
     #with db.engine as pg_cur:
     with get_db_cursor() as pg_cur:
         try:
+            #pg_cur.execute(sql, (search_stats_tuple,))
             pg_cur.execute(sql, (search_stats_tuple,))
         except psycopg2.Error:
             return "I can't SELECT:<br/><br/>" + sql
@@ -349,33 +351,12 @@ def get_metadata():
         feature_dict = dict(row)
         feature_dict["id"] = feature_dict["id"].lower()
         feature_dict["table"] = feature_dict["table"].lower()
-
-        # # get ranges of stat values per boundary type
-        # for boundary in boundary_names:
-        #     boundary_table = "{0}.{1}".format(settings["web_schema"], boundary["name"])
-        #
-        #     data_table = "{0}.{1}_{2}".format(settings["data_schema"], boundary["name"], feature_dict["table"])
-        #
-        #     # get the values for the map classes
-        #     with get_db_cursor() as pg_cur:
-        #         if feature_dict["maptype"] == "values":
-        #             stat_field = "tab.{0}" \
-        #                 .format(feature_dict["id"], )
-        #         else:  # feature_dict["maptype"] == "percent"
-        #             stat_field = "CASE WHEN bdy.population > 0 THEN tab.{0} / bdy.population * 100.0 ELSE 0 END" \
-        #                 .format(feature_dict["id"], )
-        #
-        #         # get range of stat values
-        #         # feature_dict[boundary_name] = utils.get_equal_interval_bins(
-        #         # feature_dict[boundary["name"]] = utils.get_kmeans_bins(
-        #         feature_dict[boundary["name"]] = utils.get_min_max(
-        #             data_table, boundary_table, stat_field, num_classes, boundary["min"], feature_dict["maptype"],
-        #             pg_cur, settings)
-
+        #print(feature_dict)
         # add dict to output array of metadata
         feature_array.append(feature_dict)
 
     response_dict["stats"] = feature_array
+    print(response_dict)
     # output_array.append(output_dict)
 
     # print("Got metadata for {0} in {1}".format(boundary_name, datetime.now() - start_time))

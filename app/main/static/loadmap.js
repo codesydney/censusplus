@@ -22,7 +22,8 @@ var curMapCenter = new L.LatLng(-33.85, 151.15);
 var hasInitMapPanTo = 0;
 
 var statsArray = [];
-var currentStat;
+var currentStat; //for example: G1. It can be combined with the next
+var currentStatId = ""; //for example: G1
 var currMapMin = 0;
 var currMapMax = 0;
 var boundaryZooms;
@@ -31,7 +32,7 @@ var boundaryOverride = "";
 
 var currentBoundary = "";
 var currentBoundaryMin = 7;
-var currentStatId = "";
+
 
 var highlightColour = "#ff0000";
 var lowPopColour = "#422";
@@ -40,6 +41,7 @@ var colourRamp;
 //var colourRange = ["#1a1a1a", "#DD4132"]; // dark grey > red
 //var colourRange = ["#1a1a1a", "#92B558"]; // dark grey > green
 var colourRange = ["#ffffff", "#00ff00"]; // dark grey > green
+
 
 // get querystring values
 // code from http://forum.jquery.com/topic/getting-value-from-a-querystring
@@ -85,6 +87,7 @@ if (!queryObj.z) {
 //    numClasses = queryObj["n"];
 //}
 
+/*
 // get the stat(s) - can include basic equations using + - * / and ()  e.g. B23 * (B45 + B678)
 if (!queryObj.stats) {
     if (censusYear === "2016") {
@@ -96,12 +99,14 @@ if (!queryObj.stats) {
     statsArray = encodeURIComponent(queryObj.stats.toLowerCase()).split("%2C");
     // TODO: handle maths operators as well as plain stats
 }
+*/
 
-function init(InputSuburb,mb_2016_code,InputSSC,stats) {
-    console.log("loadmap.js::init: enter, paras="+InputSuburb+","+mb_2016_code+","+InputSSC+","+stats);
+function init(InputSuburb,mb_2016_code,InputSSC,mapstats) {
+    console.log("loadmap.js::init: enter, paras="+InputSuburb+","+mb_2016_code+","+InputSSC+","+mapstats);
     
     // initial stat is the first one in the querystring
-    currentStatId = statsArray[0];
+    //currentStatId = statsArray[0];
+    currentStatId = mapstats;
 
     // create colour ramp
     colourRamp = new Rainbow();
@@ -159,6 +164,7 @@ function init(InputSuburb,mb_2016_code,InputSSC,stats) {
     }).addTo(map);
     */
 
+    
     // add control that shows info on mouseover
     info = L.control();
     info.onAdd = function () {
@@ -212,13 +218,16 @@ function init(InputSuburb,mb_2016_code,InputSSC,stats) {
                     infoStr += "<br/><span class='highlight' style='background:" + lowPopColour + "'>low population</span>";
                 }
             }
-        } else {
+        } 
+        else {
             infoStr ="pick a boundary";
         }
 
         this._div.innerHTML = infoStr;
     };
+    
 
+    /*
     // add radio buttons to choose stat to theme the map
     themer = L.control({
         position : "bottomright"
@@ -246,18 +255,15 @@ function init(InputSuburb,mb_2016_code,InputSSC,stats) {
     };
     themer.addTo(map);
     themer.update("<b>L O A D I N G . . .</b>");
+    */
 
-    // get a new set of data when map panned or zoomed
-    map.on("moveend", function () {
-        getCurrentStatMetadata();
-        getData(InputSSC);
-    });
+
 
     // get list of boundaries and the zoom levels they display at
     // and get stats metadata, including map theme classes
     $.when(
         $.getJSON(bdyNamesUrl + "?min=" + minZoom.toString() + "&max=" + maxZoom.toString()),
-        $.getJSON(metadataUrl + "?c="  + censusYear + "&n=" + numClasses.toString() + "&stats=" + statsArray.join())
+        $.getJSON(metadataUrl + "?c="  + censusYear + "&n=" + numClasses.toString() + "&stats=" + mapstats)
     ).done(function(bdysResponse, metadataResponse) {
         if (!boundaryOverride){
             boundaryZooms = bdysResponse[0];
@@ -274,10 +280,11 @@ function init(InputSuburb,mb_2016_code,InputSSC,stats) {
         }
 
         // get the initial stat"s metadata
-        currentStats = metadataResponse[0].stats;
+        currentStat = metadataResponse[0].stats[0];
         console.log("loadmap.js::init: currentStats=");
-        console.log(currentStats);
-        getCurrentStatMetadata();
+        console.log(currentStat.id);
+        console.log(currentStat);
+        //getCurrentStatMetadata(currentStats);
 
         // show legend and info controls
         // legend.addTo(map);
@@ -287,6 +294,11 @@ function init(InputSuburb,mb_2016_code,InputSSC,stats) {
         getData(InputSSC);
     });
 
+    // get a new set of data when map panned or zoomed
+    map.on("moveend", function () {
+        //getCurrentStatMetadata(currentStats);
+        getData(InputSSC);
+    });
 
 }
 
@@ -330,7 +342,7 @@ function setRadioButtons() {
     themer.update(radioButtons);
 }
 
-function getCurrentStatMetadata() {
+function getCurrentStatMetadata(currentStats) {
     // loop through the stats to get the current one
     for (var i = 0; i < currentStats.length; i++) {
         if (currentStats[i].id === currentStatId) {
@@ -362,7 +374,7 @@ function stringNumber(val, mapType, type) {
 *call main/views.py::@main.route("/get-data") to get boundaries data
 ***********************************************************/
 function getData(InputSSC) {
-
+    console.log(currentStat);
     console.time("got boundaries");
 
     // get new zoom level and boundary
@@ -434,7 +446,7 @@ function gotData(json) {
         // get min and max values
         currMapMin = 999999999;
         currMapMax = -999999999;
-
+        */
         var features = json.features;
 
         for (var i = 0; i < features.length; i++){
@@ -450,20 +462,20 @@ function gotData(json) {
                     val = props.percent;
                 }
 
-                if (val < currMapMin) { currMapMin = val }
-                if (val > currMapMax) { currMapMax = val }
+                //if (val < currMapMin) { currMapMin = val }
+                //if (val > currMapMax) { currMapMax = val }
             }
         }
 
         // correct max percents over 100% (where pop is less than stat, for whatever reason)
-        if (currentStat.maptype === "percent" && currMapMax > 100.0) { currMapMax = 100.0 }
+        //if (currentStat.maptype === "percent" && currMapMax > 100.0) { currMapMax = 100.0 }
 
         // set the number range for the colour gradient (allow for decimals, convert to ints)
-        var minInt = parseInt(currMapMin.toFixed(1).toString().replace(".",""));
-        var maxInt = parseInt(currMapMax.toFixed(1).toString().replace(".",""));
+        //var minInt = parseInt(currMapMin.toFixed(1).toString().replace(".",""));
+        //var maxInt = parseInt(currMapMax.toFixed(1).toString().replace(".",""));
     
-        colourRamp.setNumberRange(minInt, maxInt);
-        */
+        //colourRamp.setNumberRange(minInt, maxInt);
+        
 
         //update the legend with the new min and max
         // legend.update();
@@ -472,7 +484,7 @@ function gotData(json) {
         info.update();
 
         // create the radio buttons
-        setRadioButtons();
+        //setRadioButtons();
 
         // console.log(currMapMin);
         // console.log(currMapMax);
