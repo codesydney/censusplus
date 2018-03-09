@@ -22,8 +22,11 @@ var curMapCenter = new L.LatLng(-33.85, 151.15);
 var hasInitMapPanTo = 0;
 
 var statsArray = [];
-var currentStat; //for example: G1. It can be combined with the next
-var currentStatId = ""; //for example: G1
+var currentStat; 
+//for example: {'id': 'g2', 'table': 'g01', 'description': 'Total Persons Females', 'type': 'Females', 'maptype': 'values'}]
+var currentStatId = ""; 
+//for example: g2. currentStatId is lower case. parameter mapstats of init is capital.
+//because in the return data from /get-data, the key is lowcase. for example: in props[currentStatId].
 var currMapMin = 0;
 var currMapMax = 0;
 var boundaryZooms;
@@ -106,7 +109,8 @@ function init(InputSuburb,mb_2016_code,InputSSC,mapstats) {
     
     // initial stat is the first one in the querystring
     //currentStatId = statsArray[0];
-    currentStatId = mapstats;
+    currentStatId = mapstats.toLowerCase();
+
 
     // create colour ramp
     colourRamp = new Rainbow();
@@ -114,6 +118,9 @@ function init(InputSuburb,mb_2016_code,InputSSC,mapstats) {
 
     //Initialize the map on the "map" div - only use canvas if supported (can be slow on Safari)
     var elem = document.createElement("canvas");
+    if (!$.isEmptyObject(map)){
+        map.remove();
+    }
     if (elem.getContext && elem.getContext("2d")) {
         map = new L.Map("map", { preferCanvas: true });
     } else {
@@ -214,9 +221,9 @@ function init(InputSuburb,mb_2016_code,InputSSC,mapstats) {
                 }
 
                 // highlight low population bdys
-                if (props.population <= currentBoundaryMin) {
-                    infoStr += "<br/><span class='highlight' style='background:" + lowPopColour + "'>low population</span>";
-                }
+                //if (props.population <= currentBoundaryMin) {
+                //    infoStr += "<br/><span class='highlight' style='background:" + lowPopColour + "'>low population</span>";
+                //}
             }
         } 
         else {
@@ -314,7 +321,7 @@ function initMapPanTo(curMapCenter){
     else{
     }
 }
-
+/*
 function setRadioButtons() {
     // var radioButtons = "<h4>Active stat</h4>";
     var radioButtons = "";
@@ -341,7 +348,7 @@ function setRadioButtons() {
 
     themer.update(radioButtons);
 }
-
+*/
 function getCurrentStatMetadata(currentStats) {
     // loop through the stats to get the current one
     for (var i = 0; i < currentStats.length; i++) {
@@ -436,6 +443,7 @@ function getData(InputSSC) {
 function gotData(json) {
     console.timeEnd("loadmap.js::gotData: got boundaries");
     console.time("loadmap.js::gotData: parsed GeoJSON");
+    console.log("loadmap.js::gotData: json = "+json);
 
     if (json !== null) {
         if(geojsonLayer !== undefined) {
@@ -453,7 +461,7 @@ function gotData(json) {
             var props = features[i].properties;
 
             // only include if pop is significant
-            if (props.population > currentBoundaryMin){
+            //if (props.population > currentBoundaryMin){
                 var val = 0;
 
                 if (currentStat.maptype === "values") {
@@ -464,7 +472,7 @@ function gotData(json) {
 
                 //if (val < currMapMin) { currMapMin = val }
                 //if (val > currMapMax) { currMapMax = val }
-            }
+            //}
         }
 
         // correct max percents over 100% (where pop is less than stat, for whatever reason)
@@ -501,6 +509,7 @@ function gotData(json) {
         //console.log("loadmap.js::gotData: json:"+json);
         //});
 
+        //center current suburb
         //console.log("loadmap.js::gotData: curCenter = ");
         var curPolygon = L.polygon(json.features[0].geometry.coordinates);
         var mapCenter = curPolygon.getBounds().getCenter();
@@ -521,6 +530,7 @@ function gotData(json) {
 }
 
 function style(feature) {
+    /*
     var renderVal;
     var props = feature.properties;
 
@@ -529,7 +539,7 @@ function style(feature) {
     } else {
         renderVal = props.percent;
     }
-
+    */
     //var col = getColor(renderVal, props.population);
     var col = "#FFF056";
 
@@ -586,7 +596,9 @@ function highlightFeature(e) {
         //    if (!L.Browser.ie && !L.Browser.edge && !L.Browser.opera) {
         currLayer.bringToFront();
         //    }
-
+        //console.log("loadmap.js::highlightFeature:");
+        //console.log(currentStatId);
+        //console.log(currLayer.feature.properties[currentStatId]);
         info.update(currLayer.feature.properties);
     }
 }

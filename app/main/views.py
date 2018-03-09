@@ -478,6 +478,7 @@ def get_data():
 
     # Assemble the GeoJSON
     output_dict["features"] = feature_array
+    print("view.py::get_data",output_dict);
 
     # print("Parsed records into JSON in {1}".format(i, datetime.now() - start_time))
     print("get-data: returned {0} records  {1}".format(i, datetime.now() - full_start_time))
