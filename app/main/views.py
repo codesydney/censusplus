@@ -174,7 +174,7 @@ def index():
 
         print("view.py::index: InputSSC = "+InputSSC)
 
-        result_data = get_result_data(InputSSC);
+        result_data = get_result_data(InputSSC, InputSuburb);
 
         return render_template('result.html',
                                 #resultform=resultform,
@@ -193,7 +193,7 @@ def index():
                                 form=form)
 
 
-def get_result_data(InputSSC):
+def get_result_data(InputSSC, InputSuburb):
     """get different census data from db.
     """
     result_data = [];
@@ -253,9 +253,50 @@ def get_result_data(InputSSC):
     # # Assemble the JSON
     # response_dict["boundaries"] = output_array
 
-    #return Response(json.dumps(response_dict), mimetype='application/json')
+    #sort response_dict by id: g1~g108
     response_dict.sort(key=operator.itemgetter('no'))
     print("views:py::get_result_data: response_dict = ",response_dict)
+
+
+    #get values of census item from g1 to g108
+    with get_db_cursor() as pg_cur:
+
+        search_stats_tuple = tuple(["G"+str(no) for no in range(1,10)]) 
+        #the max value can be set up to 109. They are all in table: census_2016_data.ccs_g1
+        print ("views.py::get_result_data: search_stats_tuple = ",search_stats_tuple);
+
+        #hardcode
+        sql_template2 = "SELECT tab.g1, tab.g2, tab.g3, tab.g4, tab.g5, tab.g6, tab.g7, tab.g8, tab.g9 " \
+              "FROM {0}.%s_%s AS tab " \
+              "WHERE tab.region_id = '%s'" \
+              .format('census_2016_data')
+        #print("==>main/views.py::get_data: enter line 389")
+
+        sql2 = pg_cur.mogrify(sql_template2, (AsIs("ssc"), AsIs("g01"), AsIs(InputSSC)))
+        #hardcode
+        
+
+        print("===>views.py::get_result_metadata: sql2:", sql2)
+    
+        try:
+            pg_cur.execute(sql2)
+        except psycopg2.Error:
+            return "I can't SELECT:<br/><br/>" + sql2
+
+        # Retrieve the results of the query
+        value_row = pg_cur.fetchone()
+    
+        value_dict = dict(value_row);
+        print("views.py::get_result_metadata the result of sql2:",value_dict)
+
+        for response_item in response_dict:
+            if response_item["no"]<=9: #now only get the first 9 items. 9 is hardcode
+               for key, value in value_dict.items():
+                    if key == response_item["id"]:
+                        response_item["value"] = int(value)
+                        response_item["suburb"] = InputSuburb
+                        response_item["year"] = "2016"
+
     return response_dict;
 
 @main.route('/autocomplete', methods=['GET'])

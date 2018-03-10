@@ -111,23 +111,21 @@ onload="init('{{InputSuburb}}','{{mb_2016_code}}','{{InputSSC}}','{{mapstats}}')
                                     </tr>
                                 </thead>
                             
-                                <!--tbody>
-                                  {% for population in population_list %}
+                                <tbody>
                                   <tr>
                                     <td>
-                                      {% print population[2] %}
+                                      {{item['suburb']}}
                                     </td>
                                     <td>
-                                      {% print population[0] %}
+                                      {{item['year']}}                                      
                                     </td>
                                     
                                     <td>
-                                        {% print population[5] %}
+                                      {{item['value']}}                                        
                                     </td>
                                     
                                   </tr>
-                                  {% endfor %} 
-                                </tbody-->
+                                </tbody>
                       </table>
                     </div>
                 </div>
