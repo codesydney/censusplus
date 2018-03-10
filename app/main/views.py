@@ -21,6 +21,7 @@ from contextlib import contextmanager
 
 import operator
 import re
+from datetime import datetime
 
 #schema name in DB
 SCHEMA_DATA = "census_2016_data"
@@ -29,7 +30,7 @@ SCHEMA_BDYS = "census_2016_bdys"
 SCHEMA_PUBLIC = "public"
 
 # create database connection pool
-'''
+
 pool = ThreadedConnectionPool(
     1, 3,
     database="d1l2hpefphgah3",
@@ -45,7 +46,7 @@ pool = ThreadedConnectionPool(
     password="123456",
     host="localhost",
     port=5432)
-
+'''
 # get the boundary name that suits each (tiled map) zoom level and its minimum value to colour in
 def get_boundary(zoom_level):
 
@@ -122,7 +123,7 @@ def index():
 
             sql_template = "SELECT add.locality_name, add.mb_2016_code " \
                 "from {0}.nsw_addresses as add " \
-                "where add.address ilike '%s' " \
+                "where add.address = '%s' " \
                 .format('public')
             sql = pg_cur.mogrify(sql_template, (AsIs(InputAddress),))            
 
