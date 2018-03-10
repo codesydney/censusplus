@@ -19,10 +19,20 @@ from psycopg2.pool import ThreadedConnectionPool
 from psycopg2.extensions import AsIs
 from contextlib import contextmanager
 
+import operator
+import re
+from datetime import datetime
+
+#schema name in DB
+SCHEMA_DATA = "census_2016_data"
+SCHEMA_WEB = "census_2016_web"
+SCHEMA_BDYS = "census_2016_bdys"
+SCHEMA_PUBLIC = "public"
+
 # create database connection pool
 
 pool = ThreadedConnectionPool(
-    1, 3,
+    3, 5,
     database="d1l2hpefphgah3",
     user="zohdghtrwzqtiz",
     password="7b7df36d4c206a3601cbf365ec83462af9118e9abff84d18ab219ca31eb49d57",
@@ -30,7 +40,7 @@ pool = ThreadedConnectionPool(
     port=5432)
 '''
 pool = ThreadedConnectionPool(
-    1, 2,
+    2, 4,
     database="opend",
     user="postgres",
     password="123456",
@@ -101,7 +111,7 @@ def get_db_cursor(commit=False):
 @main.route('/', methods=['GET', 'POST'])
 @main.route('/index', methods=['GET', 'POST'])
 def index():
-    print("==>main/views.py::index: enter")
+    #print("==>main/views.py::index: enter")
     form = MainForm()
     tryagainform = TryAgainForm()
     
@@ -113,7 +123,7 @@ def index():
 
             sql_template = "SELECT add.locality_name, add.mb_2016_code " \
                 "from {0}.nsw_addresses as add " \
-                "where add.address ilike '%s' " \
+                "where add.address = '%s' " \
                 .format('public')
             sql = pg_cur.mogrify(sql_template, (AsIs(InputAddress),))            
 
@@ -165,46 +175,130 @@ def index():
 
         print("view.py::index: InputSSC = "+InputSSC)
 
-
-        #************* BEGIN - NSW Birth Rate Information API Call ****************** 
-        my_response_birth = birthrate_views.get_detail(InputSuburb)
-        #print(my_response_birth.get_data().decode("utf-8"))
-        json_response_birth = json.loads(my_response_birth.get_data().decode("utf-8"))
-        value_details = []
-        value_details = json_response_birth.get('details')
-
-        birth_rate_list = []
-        for d in value_details:
-            selected_fields=[d['YEAR'],d['LOCALITY'],d['SUBURB'],d['STATE'],d['POSTCODE'],d['COUNT']]
-            birth_rate_list.append(selected_fields)     
-        #************ END- NSW Birth Rate Information API Call **********************
-
-        #************* BEGIN - NSW Population Information API Call ****************** 
-        my_response_popu = population_views.get_detail(InputSuburb)
-        json_response_popu = json.loads(my_response_popu.get_data().decode("utf-8"))
-        value_details = []
-        value_details = json_response_popu.get('details')
-
-        population_list = []
-        for d in value_details:
-            selected_fields=[d['YEAR'],d['CODE'],d['SUBURB'],d['STATE'],d['POSTCODE'],d['POPULATION']]
-            population_list.append(selected_fields)
-        #************ END- NSW Population Information API Call **********************
+        result_data = get_result_data(InputSSC, InputSuburb);
 
         return render_template('result.html',
                                 #resultform=resultform,
                                 InputSuburb=InputSuburb,
-                                birth_rate_list=birth_rate_list,
-                                population_list=population_list,
+                                #birth_rate_list=birth_rate_list,
+                                #population_list=population_list,
                                 mb_2016_code=mb_2016_code,
                                 InputSSC=InputSSC,
-                                stats="g1")                             
+                                result_data=result_data,
+                                mapstats="g1")                             
                                 
     #elif resultform.validate_on_submit() and resultform.Submit2.data:   
          #return redirect(url_for('main.index'))
     else:       
         return render_template('mainform.html',
                                 form=form)
+
+
+def get_result_data(InputSSC, InputSuburb):
+    """get different census data from db.
+    """
+    result_data = [];
+
+    #with db.engine as pg_cur:
+    with get_db_cursor() as pg_cur:
+
+        search_stats_tuple = tuple(["G"+str(no) for no in range(1,10)]) 
+        #the max value can be set up to 109. They are all in table: census_2016_data.ccs_g1
+        print ("views.py::get_result_data: search_stats_tuple = ",search_stats_tuple);
+
+        sql_template = "SELECT sequential_id AS id, " \
+              "lower(table_number) AS \"table\", " \
+              "replace(long_id, '_', ' ') AS description, " \
+              "column_heading_description AS type, " \
+              "'values' as maptype " \
+              "FROM {0}.metadata_stats " \
+              "WHERE sequential_id IN %s " \
+              "ORDER BY sequential_id".format('census_2016_data')
+
+        sql = pg_cur.mogrify(sql_template, (AsIs(search_stats_tuple),)) 
+
+        print("===>views.py::get_result_data: sql:", sql)
+    
+        try:
+            #pg_cur.execute(sql, (search_stats_tuple,))
+            pg_cur.execute(sql)
+        except psycopg2.Error:
+            return "I can't SELECT:<br/><br/>" + sql
+
+        # Retrieve the results of the query
+        rows = pg_cur.fetchall()
+    
+
+    #rows = db.engine.execute(sql)    
+
+    # output is the main content, row_output is the content from each record returned
+    response_dict = []
+
+    # For each row returned assemble a dictionary
+    #no = 1;
+    for row in rows:
+        feature_dict = dict(row)
+        #no%5 determine the colour of panel head in result page.
+        feature_dict["no"] = int(re.sub("[A-Za-z]","",feature_dict["id"]))
+        feature_dict["id"] = feature_dict["id"].lower()
+        feature_dict["table"] = feature_dict["table"].lower()
+        #print(feature_dict)
+        # add dict to output array of metadata
+        response_dict.append(feature_dict)
+        #no += 1
+
+    # output_array.append(output_dict)
+
+    # print("Got metadata for {0} in {1}".format(boundary_name, datetime.now() - start_time))
+
+    # # Assemble the JSON
+    # response_dict["boundaries"] = output_array
+
+    #sort response_dict by id: g1~g108
+    response_dict.sort(key=operator.itemgetter('no'))
+    print("views:py::get_result_data: response_dict = ",response_dict)
+
+
+    #get values of census item from g1 to g108
+    with get_db_cursor() as pg_cur:
+
+        search_stats_tuple = tuple(["G"+str(no) for no in range(1,10)]) 
+        #the max value can be set up to 109. They are all in table: census_2016_data.ccs_g1
+        print ("views.py::get_result_data: search_stats_tuple = ",search_stats_tuple);
+
+        #hardcode
+        sql_template2 = "SELECT tab.g1, tab.g2, tab.g3, tab.g4, tab.g5, tab.g6, tab.g7, tab.g8, tab.g9 " \
+              "FROM {0}.%s_%s AS tab " \
+              "WHERE tab.region_id = '%s'" \
+              .format('census_2016_data')
+        #print("==>main/views.py::get_data: enter line 389")
+
+        sql2 = pg_cur.mogrify(sql_template2, (AsIs("ssc"), AsIs("g01"), AsIs(InputSSC)))
+        #hardcode
+        
+
+        print("===>views.py::get_result_metadata: sql2:", sql2)
+    
+        try:
+            pg_cur.execute(sql2)
+        except psycopg2.Error:
+            return "I can't SELECT:<br/><br/>" + sql2
+
+        # Retrieve the results of the query
+        value_row = pg_cur.fetchone()
+    
+        value_dict = dict(value_row);
+        print("views.py::get_result_metadata the result of sql2:",value_dict)
+
+        for response_item in response_dict:
+            if response_item["no"]<=9: #now only get the first 9 items. 9 is hardcode
+               for key, value in value_dict.items():
+                    if key == response_item["id"]:
+                        response_item["value"] = int(value)
+                        response_item["suburb"] = InputSuburb
+                        response_item["year"] = "2016"
+
+    return response_dict;
 
 @main.route('/autocomplete', methods=['GET'])
 def autocomplete():
@@ -233,9 +327,11 @@ def autocomplete():
         addresslist.append(row['address'])
     return jsonify(matching_results=addresslist)
 
-#About page
+
 @main.route('/about', methods=['GET'])
 def about():
+    """about page
+    """
     return render_template('about.html');
 
 
@@ -269,14 +365,17 @@ def get_metadata():
     # census_year = request.args.get('c')
 
     # comma separated list of stat ids (i.e. sequential_ids) AND/OR equations contains stat ids
-    raw_stats = request.args.get('stats')
+    raw_stats = request.args.get('stats').upper()
+    searchStatsStr = "'"+raw_stats+"'"
+    search_stats = raw_stats.upper().split(",")
 
+    
     # get number of map classes
     try:
         num_classes = int(request.args.get('n'))
     except TypeError:
         num_classes = 7
-
+    '''
     # replace all maths operators to get list of all the stats we need to query for
     search_stats = raw_stats.upper().replace(" ", "").replace("(", "").replace(")", "") \
         .replace("+", ",").replace("-", ",").replace("/", ",").replace("*", ",").split(",")
@@ -287,10 +386,11 @@ def get_metadata():
 
     # print(equation_stats)
     # print(search_stats)
-
+    '''
     # get stats tuple for query input (convert to lower case)
-    search_stats_tuple = tuple([stat.lower() for stat in search_stats])
+    search_stats_tuple = tuple([stat for stat in search_stats])
 
+    '''
     # get all boundary names in all zoom levels
     boundary_names = list()
     test_names = list()
@@ -306,27 +406,25 @@ def get_metadata():
             boundary_names.append(bdy_dict)
 
             test_names.append(bdy_name)
+    '''
 
     # get stats metadata, including the all important table number and map type (raw values based or normalised by pop)
-    sql = "SELECT lower(sequential_id) AS id, " \
+    sql = "SELECT sequential_id AS id, " \
           "lower(table_number) AS \"table\", " \
           "replace(long_id, '_', ' ') AS description, " \
           "column_heading_description AS type, " \
-          "CASE WHEN lower(sequential_id) = '{0}' " \
-          "OR lower(long_id) LIKE '%%median%%' " \
-          "OR lower(long_id) LIKE '%%average%%' " \
-          "THEN 'values' " \
-          "ELSE 'percent' END AS maptype " \
-          "FROM {1}.metadata_stats " \
-          "WHERE lower(sequential_id) IN %s " \
-          "ORDER BY sequential_id".format("g3", 'census_2016_data')
+          "'values' as maptype " \
+          "FROM {0}.metadata_stats " \
+          "WHERE sequential_id IN %s " \
+          "ORDER BY sequential_id".format('census_2016_data')
 
-    print("views.py::get_metadata: ",search_stats_tuple,end=' ')
+    print("===>views.py::get_metadata: ",raw_stats)
     print(sql)
     
     #with db.engine as pg_cur:
     with get_db_cursor() as pg_cur:
         try:
+            #pg_cur.execute(sql, (search_stats_tuple,))
             pg_cur.execute(sql, (search_stats_tuple,))
         except psycopg2.Error:
             return "I can't SELECT:<br/><br/>" + sql
@@ -349,33 +447,12 @@ def get_metadata():
         feature_dict = dict(row)
         feature_dict["id"] = feature_dict["id"].lower()
         feature_dict["table"] = feature_dict["table"].lower()
-
-        # # get ranges of stat values per boundary type
-        # for boundary in boundary_names:
-        #     boundary_table = "{0}.{1}".format(settings["web_schema"], boundary["name"])
-        #
-        #     data_table = "{0}.{1}_{2}".format(settings["data_schema"], boundary["name"], feature_dict["table"])
-        #
-        #     # get the values for the map classes
-        #     with get_db_cursor() as pg_cur:
-        #         if feature_dict["maptype"] == "values":
-        #             stat_field = "tab.{0}" \
-        #                 .format(feature_dict["id"], )
-        #         else:  # feature_dict["maptype"] == "percent"
-        #             stat_field = "CASE WHEN bdy.population > 0 THEN tab.{0} / bdy.population * 100.0 ELSE 0 END" \
-        #                 .format(feature_dict["id"], )
-        #
-        #         # get range of stat values
-        #         # feature_dict[boundary_name] = utils.get_equal_interval_bins(
-        #         # feature_dict[boundary["name"]] = utils.get_kmeans_bins(
-        #         feature_dict[boundary["name"]] = utils.get_min_max(
-        #             data_table, boundary_table, stat_field, num_classes, boundary["min"], feature_dict["maptype"],
-        #             pg_cur, settings)
-
+        #print(feature_dict)
         # add dict to output array of metadata
         feature_array.append(feature_dict)
 
     response_dict["stats"] = feature_array
+    print(response_dict)
     # output_array.append(output_dict)
 
     # print("Got metadata for {0} in {1}".format(boundary_name, datetime.now() - start_time))
@@ -497,6 +574,7 @@ def get_data():
 
     # Assemble the GeoJSON
     output_dict["features"] = feature_array
+    #print("view.py::get_data",output_dict);
 
     # print("Parsed records into JSON in {1}".format(i, datetime.now() - start_time))
     print("get-data: returned {0} records  {1}".format(i, datetime.now() - full_start_time))
