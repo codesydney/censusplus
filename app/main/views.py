@@ -19,6 +19,15 @@ from psycopg2.pool import ThreadedConnectionPool
 from psycopg2.extensions import AsIs
 from contextlib import contextmanager
 
+import operator
+import re
+
+#schema name in DB
+SCHEMA_DATA = "census_2016_data"
+SCHEMA_WEB = "census_2016_web"
+SCHEMA_BDYS = "census_2016_bdys"
+SCHEMA_PUBLIC = "public"
+
 # create database connection pool
 '''
 pool = ThreadedConnectionPool(
@@ -30,7 +39,7 @@ pool = ThreadedConnectionPool(
     port=5432)
 '''
 pool = ThreadedConnectionPool(
-    1, 2,
+    2, 4,
     database="opend",
     user="postgres",
     password="123456",
@@ -101,7 +110,7 @@ def get_db_cursor(commit=False):
 @main.route('/', methods=['GET', 'POST'])
 @main.route('/index', methods=['GET', 'POST'])
 def index():
-    print("==>main/views.py::index: enter")
+    #print("==>main/views.py::index: enter")
     form = MainForm()
     tryagainform = TryAgainForm()
     
@@ -165,39 +174,16 @@ def index():
 
         print("view.py::index: InputSSC = "+InputSSC)
 
-
-        #************* BEGIN - NSW Birth Rate Information API Call ****************** 
-        my_response_birth = birthrate_views.get_detail(InputSuburb)
-        #print(my_response_birth.get_data().decode("utf-8"))
-        json_response_birth = json.loads(my_response_birth.get_data().decode("utf-8"))
-        value_details = []
-        value_details = json_response_birth.get('details')
-
-        birth_rate_list = []
-        for d in value_details:
-            selected_fields=[d['YEAR'],d['LOCALITY'],d['SUBURB'],d['STATE'],d['POSTCODE'],d['COUNT']]
-            birth_rate_list.append(selected_fields)     
-        #************ END- NSW Birth Rate Information API Call **********************
-
-        #************* BEGIN - NSW Population Information API Call ****************** 
-        my_response_popu = population_views.get_detail(InputSuburb)
-        json_response_popu = json.loads(my_response_popu.get_data().decode("utf-8"))
-        value_details = []
-        value_details = json_response_popu.get('details')
-
-        population_list = []
-        for d in value_details:
-            selected_fields=[d['YEAR'],d['CODE'],d['SUBURB'],d['STATE'],d['POSTCODE'],d['POPULATION']]
-            population_list.append(selected_fields)
-        #************ END- NSW Population Information API Call **********************
+        result_data = get_result_data(InputSSC);
 
         return render_template('result.html',
                                 #resultform=resultform,
                                 InputSuburb=InputSuburb,
-                                birth_rate_list=birth_rate_list,
-                                population_list=population_list,
+                                #birth_rate_list=birth_rate_list,
+                                #population_list=population_list,
                                 mb_2016_code=mb_2016_code,
                                 InputSSC=InputSSC,
+                                result_data=result_data,
                                 mapstats="g1")                             
                                 
     #elif resultform.validate_on_submit() and resultform.Submit2.data:   
@@ -205,6 +191,72 @@ def index():
     else:       
         return render_template('mainform.html',
                                 form=form)
+
+
+def get_result_data(InputSSC):
+    """get different census data from db.
+    """
+    result_data = [];
+
+    #with db.engine as pg_cur:
+    with get_db_cursor() as pg_cur:
+
+        search_stats_tuple = tuple(["G"+str(no) for no in range(1,10)]) 
+        #the max value can be set up to 109. They are all in table: census_2016_data.ccs_g1
+        print ("views.py::get_result_data: search_stats_tuple = ",search_stats_tuple);
+
+        sql_template = "SELECT sequential_id AS id, " \
+              "lower(table_number) AS \"table\", " \
+              "replace(long_id, '_', ' ') AS description, " \
+              "column_heading_description AS type, " \
+              "'values' as maptype " \
+              "FROM {0}.metadata_stats " \
+              "WHERE sequential_id IN %s " \
+              "ORDER BY sequential_id".format('census_2016_data')
+
+        sql = pg_cur.mogrify(sql_template, (AsIs(search_stats_tuple),)) 
+
+        print("===>views.py::get_result_data: sql:", sql)
+    
+        try:
+            #pg_cur.execute(sql, (search_stats_tuple,))
+            pg_cur.execute(sql)
+        except psycopg2.Error:
+            return "I can't SELECT:<br/><br/>" + sql
+
+        # Retrieve the results of the query
+        rows = pg_cur.fetchall()
+    
+
+    #rows = db.engine.execute(sql)    
+
+    # output is the main content, row_output is the content from each record returned
+    response_dict = []
+
+    # For each row returned assemble a dictionary
+    #no = 1;
+    for row in rows:
+        feature_dict = dict(row)
+        #no%5 determine the colour of panel head in result page.
+        feature_dict["no"] = int(re.sub("[A-Za-z]","",feature_dict["id"]))
+        feature_dict["id"] = feature_dict["id"].lower()
+        feature_dict["table"] = feature_dict["table"].lower()
+        #print(feature_dict)
+        # add dict to output array of metadata
+        response_dict.append(feature_dict)
+        #no += 1
+
+    # output_array.append(output_dict)
+
+    # print("Got metadata for {0} in {1}".format(boundary_name, datetime.now() - start_time))
+
+    # # Assemble the JSON
+    # response_dict["boundaries"] = output_array
+
+    #return Response(json.dumps(response_dict), mimetype='application/json')
+    response_dict.sort(key=operator.itemgetter('no'))
+    print("views:py::get_result_data: response_dict = ",response_dict)
+    return response_dict;
 
 @main.route('/autocomplete', methods=['GET'])
 def autocomplete():
@@ -233,9 +285,11 @@ def autocomplete():
         addresslist.append(row['address'])
     return jsonify(matching_results=addresslist)
 
-#About page
+
 @main.route('/about', methods=['GET'])
 def about():
+    """about page
+    """
     return render_template('about.html');
 
 
@@ -478,7 +532,7 @@ def get_data():
 
     # Assemble the GeoJSON
     output_dict["features"] = feature_array
-    print("view.py::get_data",output_dict);
+    #print("view.py::get_data",output_dict);
 
     # print("Parsed records into JSON in {1}".format(i, datetime.now() - start_time))
     print("get-data: returned {0} records  {1}".format(i, datetime.now() - full_start_time))

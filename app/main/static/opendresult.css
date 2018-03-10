@@ -15,27 +15,26 @@ body
 
 .panel-heading-1
 {
-    background-color: #5fa2dd !important;
-    border-color: #5fa2dd !important;
+    background-color: #01579b !important;
+    border-color: #01579b !important;
 }
-
 
 .panel-heading-2
 {
-    background-color: #9cc96b !important;
-    border-color: #9cc96b !important;
+    background-color: #039be5 !important;
+    border-color: #039be5 !important;
 }
+
 
 .panel-heading-3
 {
-    background-color: #ebaa4b !important;
-    border-color: #ebaa4b !important;
+    background-color: #29b6f6 !important;
+    border-color: #29b6f6 !important;
 }
-
 
 .panel-title>a, .panel-title>a:active{
   display:block;
-  padding:15px;
+  padding:10px;
   color:#ffffff;
   font-size:16px;
   font-weight:bold;

@@ -45,6 +45,8 @@ var colourRamp;
 //var colourRange = ["#1a1a1a", "#92B558"]; // dark grey > green
 var colourRange = ["#ffffff", "#00ff00"]; // dark grey > green
 
+//the suburb name from seach box
+var inputSuburb="";
 
 // get querystring values
 // code from http://forum.jquery.com/topic/getting-value-from-a-querystring
@@ -104,12 +106,13 @@ if (!queryObj.stats) {
 }
 */
 
-function init(InputSuburb,mb_2016_code,InputSSC,mapstats) {
-    console.log("loadmap.js::init: enter, paras="+InputSuburb+","+mb_2016_code+","+InputSSC+","+mapstats);
+function init(searchSuburb,mb_2016_code,InputSSC,mapstats) {
+    console.log("loadmap.js::init: enter, paras="+searchSuburb+","+mb_2016_code+","+InputSSC+","+mapstats);
     
     // initial stat is the first one in the querystring
     //currentStatId = statsArray[0];
     currentStatId = mapstats.toLowerCase();
+    inputSuburb = searchSuburb;
 
 
     // create colour ramp
@@ -189,11 +192,11 @@ function init(InputSuburb,mb_2016_code,InputSSC,mapstats) {
             var re = new RegExp(" - ", "g");
             var name = props.name.replace(re, "<br/>");
 
-            infoStr = "<span style='font-weight: bold; font-size:1.5em'>" + name + "</span><br/>";
+            infoStr = "<span style='font-weight: bold; font-size:1em; background:#fff;'>" + inputSuburb + "</span><br/>";
 
             // if no pop, nothing to display
             if (props.population === 0) {
-                infoStr += "<span class='highlight' style='background:" + lowPopColour + "'>no population</span>";
+                infoStr += "<span class='highlight' style='background:#fff;'>no population</span>";
             } else {
                 // // special case if value is total pop - convert to pop density
                 // var stat = 0;
@@ -213,11 +216,11 @@ function init(InputSuburb,mb_2016_code,InputSSC,mapstats) {
 
                 if (currentStat.maptype === "values") {
                     var colour = getColor(props[currentStatId], 99999999); //dummy second value get's the right colour
-                    infoStr += "<span class='highlight' style='background:" + colour + "'>" + type + ": " + valStr + "</span><br/>" + popStr;
+                    infoStr += "<span class='highlight' style='background:#fff;'>" + type + ": " + valStr + "</span>"; //<br/>" + popStr;
                 } else { // "percent"
                     var colour = getColor(props.percent, 99999999); //dummy second value get's the right colour
                     var percentStr = stringNumber(props.percent, "percent", type);
-                    infoStr += "<span class='highlight' style='background:" + colour + "'>" + currentStat.description + ": " + percentStr + "</span><br/>" + valStr + " of " + popStr;
+                    infoStr += "<span class='highlight' style='background:#fff;'>" + currentStat.description + ": " + percentStr + "</span>"; //<br/>" + valStr + " of " + popStr;
                 }
 
                 // highlight low population bdys
