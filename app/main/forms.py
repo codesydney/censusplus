@@ -7,10 +7,10 @@ from werkzeug.datastructures import MultiDict
 
 class MainForm(FlaskForm):
 	OpendTitle = StringField("OPEND")
-	InputAddress = StringField('Input an address and select one from suggested addresses',[validators.Required("Enter your address")])	
+	InputAddress = StringField('Search for your address',[validators.Required("Enter your address")])	
 	Submit1 = SubmitField('Get Report',render_kw={"size":"90"})	    
 
 class TryAgainForm(FlaskForm):
-    InputAddress = StringField('Cannot find the inputed address, please input an address and select one from suggested addresses', \
-                    [validators.Required("Enter your address")])
+    InputAddress = StringField('Address not found. Please try again.', \
+                    [validators.Required("Search for your address")])
     Submit1 = SubmitField('Try again',render_kw={"size":"90"})
