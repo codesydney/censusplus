@@ -4,6 +4,7 @@ body
     padding-top: 65px; 
     padding-left: 10px;
     padding-right: 10px;
+    background-attachment : fixed;
 }
 
 .brand-icon{
