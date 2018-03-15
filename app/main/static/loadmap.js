@@ -124,13 +124,15 @@ function init(searchSuburb,mb_2016_code,InputSSC,mapstats) {
     if (!$.isEmptyObject(map)){
         map.remove();
     }
+    /*
     if (elem.getContext && elem.getContext("2d")) {
         map = new L.Map("map", { preferCanvas: true });
     } else {
         map = new L.Map("map", { preferCanvas: false });
     }
+    */
 
-    // map = new L.Map("map", { preferCanvas: false }); // canvas slows Safari down versus Chrome (IE & edge are untested)
+    map = new L.Map("map", { preferCanvas: false }); // canvas slows Safari down versus Chrome (IE & edge are untested)
 
     // acknowledge the data provider
     map.attributionControl.addAttribution("Census data &copy; <a href='http://www.abs.gov.au/websitedbs/d3310114.nsf/Home/Attributing+ABS+Material'>ABS</a>");
