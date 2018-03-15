@@ -142,7 +142,8 @@ function init(searchSuburb,mb_2016_code,InputSSC,mapstats) {
 
     // load CartoDB basemap
     //L.tileLayer("http://cartodb-basemaps-{s}.global.ssl.fastly.net/dark_all/{z}/{x}/{y}.png", {
-    L.tileLayer("https://a.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    //L.tileLayer("https://a.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
         attribution : "&copy; <a href='http://www.openstreetmap.org/copyright'>OpenStreetMap</a> &copy; <a href='http://cartodb.com/attributions'>CartoDB</a>",
         subdomains : "abcd",
         minZoom : minZoom,
