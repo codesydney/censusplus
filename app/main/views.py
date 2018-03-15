@@ -40,7 +40,7 @@ pool = ThreadedConnectionPool(
     port=5432)
 '''
 pool = ThreadedConnectionPool(
-    2, 4,
+    3, 5,
     database="opend",
     user="postgres",
     password="123456",
