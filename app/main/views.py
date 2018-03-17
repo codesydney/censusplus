@@ -177,6 +177,17 @@ def index():
 
         result_data = get_result_data(InputSSC, InputSuburb);
 
+#        print(render_template('result.html',
+#                                #resultform=resultform,
+#                                InputSuburb=InputSuburb,
+#                                #birth_rate_list=birth_rate_list,
+#                                #population_list=population_list,
+#                                mb_2016_code=mb_2016_code,
+#                                InputSSC=InputSSC,
+#                                result_data=result_data,
+#                                mapstats="g1")                             
+#                                );
+        
         return render_template('result.html',
                                 #resultform=resultform,
                                 InputSuburb=InputSuburb,
@@ -256,7 +267,7 @@ def get_result_data(InputSSC, InputSuburb):
 
     #sort response_dict by id: g1~g108
     response_dict.sort(key=operator.itemgetter('no'))
-    print("views:py::get_result_data: response_dict = ",response_dict)
+    #print("views:py::get_result_data: response_dict = ",response_dict)
 
 
     #get values of census item from g1 to g108
@@ -288,7 +299,7 @@ def get_result_data(InputSSC, InputSuburb):
         value_row = pg_cur.fetchone()
     
         value_dict = dict(value_row);
-        print("views.py::get_result_metadata the result of sql2:",value_dict)
+        #print("views.py::get_result_metadata the result of sql2:",value_dict)
 
         for response_item in response_dict:
             if response_item["no"]<=9: #now only get the first 9 items. 9 is hardcode
@@ -452,7 +463,7 @@ def get_metadata():
         feature_array.append(feature_dict)
 
     response_dict["stats"] = feature_array
-    print(response_dict)
+    # print(response_dict)
     # output_array.append(output_dict)
 
     # print("Got metadata for {0} in {1}".format(boundary_name, datetime.now() - start_time))

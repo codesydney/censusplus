@@ -121,18 +121,23 @@ function init(searchSuburb,mb_2016_code,InputSSC,mapstats) {
 
     //Initialize the map on the "map" div - only use canvas if supported (can be slow on Safari)
     var elem = document.createElement("canvas");
-    if (!$.isEmptyObject(map)){
+    
+    //if (!$.isEmptyObject(map)){
+    
+    if(typeof map !== 'undefined'){
         map.remove();
     }
-    /*
+    
+    
     if (elem.getContext && elem.getContext("2d")) {
-        map = new L.Map("map", { preferCanvas: true });
+        map = new L.Map("datamap", { preferCanvas: true });
     } else {
-        map = new L.Map("map", { preferCanvas: false });
+        map = new L.Map("datamap", { preferCanvas: false });
     }
-    */
+    
 
-    map = new L.Map("map", { preferCanvas: false }); // canvas slows Safari down versus Chrome (IE & edge are untested)
+    //map = new L.Map("datamap", { preferCanvas: false }); // canvas slows Safari down versus Chrome (IE & edge are untested)
+
 
     // acknowledge the data provider
     map.attributionControl.addAttribution("Census data &copy; <a href='http://www.abs.gov.au/websitedbs/d3310114.nsf/Home/Attributing+ABS+Material'>ABS</a>");
@@ -145,7 +150,7 @@ function init(searchSuburb,mb_2016_code,InputSSC,mapstats) {
     // load CartoDB basemap
     //L.tileLayer("http://cartodb-basemaps-{s}.global.ssl.fastly.net/dark_all/{z}/{x}/{y}.png", {
     //L.tileLayer("https://a.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    L.tileLayer("https://a.tile.openstreetmap.org/{z}/{x}/{y}.png", {
         attribution : "&copy; <a href='http://www.openstreetmap.org/copyright'>OpenStreetMap</a> &copy; <a href='http://cartodb.com/attributions'>CartoDB</a>",
         subdomains : "abcd",
         minZoom : minZoom,
@@ -158,6 +163,7 @@ function init(searchSuburb,mb_2016_code,InputSSC,mapstats) {
     //map.setView(new L.LatLng(-33.85, 151.15), currentZoomLevel);
     map.setView(curMapCenter, currentZoomLevel);
 
+    /*
     // get bookmarks
     var bmStorage = {
         getAllItems : function (callback) {
@@ -167,9 +173,7 @@ function init(searchSuburb,mb_2016_code,InputSSC,mapstats) {
             });
         }
     };
-
     // add bookmark control to map
-    /*
     var bm = new L.Control.Bookmarks({
         position : "topleft",
         localStorage : false,
@@ -177,7 +181,7 @@ function init(searchSuburb,mb_2016_code,InputSSC,mapstats) {
     }).addTo(map);
     */
 
-    
+   
     // add control that shows info on mouseover
     info = L.control();
     info.onAdd = function () {
