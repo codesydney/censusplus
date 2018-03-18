@@ -37,7 +37,7 @@ SCHEMA_BDYS = "census_2016_bdys"
 SCHEMA_PUBLIC = "public"
 
 # create database connection pool
-'''
+
 pool = ThreadedConnectionPool(
     3, 5,
     database="d1l2hpefphgah3",
@@ -53,7 +53,7 @@ pool = ThreadedConnectionPool(
     password="123456",
     host="localhost",
     port=5432)
-
+'''
 # get the boundary name that suits each (tiled map) zoom level and its minimum value to colour in
 def get_boundary(zoom_level):
 
