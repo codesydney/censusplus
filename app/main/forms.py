@@ -8,7 +8,7 @@ from werkzeug.datastructures import MultiDict
 class MainForm(FlaskForm):
 	OpendTitle = StringField("OPEND")
 	InputAddress = StringField('Search for your address',[validators.Required("Enter your address")])	
-	Submit1 = SubmitField('Get Report',render_kw={"size":"90"})	    
+	Submit1 = SubmitField('GO',render_kw={"size":"90"})	    
 
 class TryAgainForm(FlaskForm):
     InputAddress = StringField('Address not found. Please try again.', \
