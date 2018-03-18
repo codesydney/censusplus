@@ -25,8 +25,9 @@ from datetime import datetime
 
 #matplotlib
 import numpy
+import matplotlib
+matplotlib.use('agg')
 import matplotlib.pyplot as plt
-matplotlib.use('Agg')
 from io import BytesIO
 #import base64
 
