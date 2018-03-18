@@ -95,9 +95,10 @@ onload="init('{{InputSuburb}}','{{mb_2016_code}}','{{InputSSC}}','{{mapstats}}')
                 <div class="row">
                     <div class="col-md-12">
 
+                      {% for table in item['table'] %}
                         <table class="table table-striped">
                             
-                                <thead>
+                                <!--thead>
                                     <tr>
                                         <td>
                                           Suburb
@@ -107,24 +108,21 @@ onload="init('{{InputSuburb}}','{{mb_2016_code}}','{{InputSSC}}','{{mapstats}}')
                                         </td>
                                         <td>Population</td>
                                     </tr>
-                                </thead>
+                                </thead-->
                             
                                 <tbody>
+                                  {% for line in table %}
                                   <tr>
+                                    {% for col in line %}
                                     <td>
-                                      {{item['suburb']}}
+                                      {{col}}
                                     </td>
-                                    <td>
-                                      {{item['year']}}                                      
-                                    </td>
-                                    
-                                    <td>
-                                      {{item['value']}}                                        
-                                    </td>
-                                    
+                                    {% endfor %}
                                   </tr>
+                                  {% endfor %}
                                 </tbody>
-                      </table>
+                          </table>
+                        {% endfor %} 
                     </div>
                 </div>
 

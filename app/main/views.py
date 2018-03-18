@@ -22,6 +22,16 @@ from contextlib import contextmanager
 import operator
 import re
 from datetime import datetime
+import random
+
+#bokeh:
+from bokeh.models import (HoverTool, FactorRange, Plot, LinearAxis, Grid,
+                          Range1d)
+from bokeh.models.glyphs import VBar
+from bokeh.plotting import figure
+from bokeh.charts import Bar
+from bokeh.embed import components
+from bokeh.models.sources import ColumnDataSource
 
 #schema name in DB
 SCHEMA_DATA = "census_2016_data"
@@ -30,7 +40,7 @@ SCHEMA_BDYS = "census_2016_bdys"
 SCHEMA_PUBLIC = "public"
 
 # create database connection pool
-
+'''
 pool = ThreadedConnectionPool(
     3, 5,
     database="d1l2hpefphgah3",
@@ -46,7 +56,7 @@ pool = ThreadedConnectionPool(
     password="123456",
     host="localhost",
     port=5432)
-'''
+
 # get the boundary name that suits each (tiled map) zoom level and its minimum value to colour in
 def get_boundary(zoom_level):
 
@@ -115,10 +125,11 @@ def index():
     form = MainForm()
     tryagainform = TryAgainForm()
     
+    #render the result page
     if form.validate_on_submit() and form.Submit1.data:
         InputAddress = form.InputAddress.data
 
-        #************* Get the suburb name and mb code of the chosen address ****************** 
+        #Get the suburb name and mb code of the chosen address
         with get_db_cursor() as pg_cur:
 
             sql_template = "SELECT add.locality_name, add.mb_2016_code " \
@@ -175,18 +186,8 @@ def index():
 
         print("view.py::index: InputSSC = "+InputSSC)
 
-        result_data = get_result_data(InputSSC, InputSuburb);
-
-#        print(render_template('result.html',
-#                                #resultform=resultform,
-#                                InputSuburb=InputSuburb,
-#                                #birth_rate_list=birth_rate_list,
-#                                #population_list=population_list,
-#                                mb_2016_code=mb_2016_code,
-#                                InputSSC=InputSSC,
-#                                result_data=result_data,
-#                                mapstats="g1")                             
-#                                );
+        # get datailed population data.
+        result_data = get_population_data(InputSSC, InputSuburb);
         
         return render_template('result.html',
                                 #resultform=resultform,
@@ -200,22 +201,26 @@ def index():
                                 
     #elif resultform.validate_on_submit() and resultform.Submit2.data:   
          #return redirect(url_for('main.index'))
+    # render the serach page
     else:       
         return render_template('mainform.html',
                                 form=form)
 
 
-def get_result_data(InputSSC, InputSuburb):
-    """get different census data from db.
+def get_population_data(InputSSC, InputSuburb):
+    """get census data about population 
+    from census_2016_data.ssc_g01.
     """
     result_data = [];
 
-    #with db.engine as pg_cur:
+    # get column's description from census_2016_data.metadata_stats
     with get_db_cursor() as pg_cur:
 
-        search_stats_tuple = tuple(["G"+str(no) for no in range(1,10)]) 
-        #the max value can be set up to 109. They are all in table: census_2016_data.ccs_g1
-        print ("views.py::get_result_data: search_stats_tuple = ",search_stats_tuple);
+        search_stats_tuple = tuple(["G"+str(no) for no in range(1,4)]) 
+        #hardcode: 4
+        #I only need G1 (total males), G2 (total females) and G3 (total persons) 
+        #They are all in table: census_2016_data.ccs_g1
+        print ("views.py::get_population_data: search_stats_tuple = ",search_stats_tuple);
 
         sql_template = "SELECT sequential_id AS id, " \
               "lower(table_number) AS \"table\", " \
@@ -228,7 +233,7 @@ def get_result_data(InputSSC, InputSuburb):
 
         sql = pg_cur.mogrify(sql_template, (AsIs(search_stats_tuple),)) 
 
-        print("===>views.py::get_result_data: sql:", sql)
+        print("===>views.py::get_population_data: sql:", sql)
     
         try:
             #pg_cur.execute(sql, (search_stats_tuple,))
@@ -249,8 +254,15 @@ def get_result_data(InputSSC, InputSuburb):
     #no = 1;
     for row in rows:
         feature_dict = dict(row)
-        #no%5 determine the colour of panel head in result page.
-        feature_dict["no"] = int(re.sub("[A-Za-z]","",feature_dict["id"]))
+        #no determine the order in result page.
+        #feature_dict["no"] = int(re.sub("[A-Za-z]","",feature_dict["id"]))
+        feature_dict["no"] = 1;
+        if feature_dict["id"] == 'G1':
+            feature_dict["no"] = 2;
+        elif feature_dict["id"] == 'G2':
+            feature_dict["no"] = 3;
+        elif feature_dict["id"] == 'G3':
+            feature_dict["no"] = 1;            
         feature_dict["id"] = feature_dict["id"].lower()
         feature_dict["table"] = feature_dict["table"].lower()
         #print(feature_dict)
@@ -267,18 +279,22 @@ def get_result_data(InputSSC, InputSuburb):
 
     #sort response_dict by id: g1~g108
     response_dict.sort(key=operator.itemgetter('no'))
-    #print("views:py::get_result_data: response_dict = ",response_dict)
+    #print("views:py::get_population_data: response_dict = ",response_dict)
 
 
     #get values of census item from g1 to g108
     with get_db_cursor() as pg_cur:
 
         search_stats_tuple = tuple(["G"+str(no) for no in range(1,10)]) 
+        #hardcode: 10
         #the max value can be set up to 109. They are all in table: census_2016_data.ccs_g1
-        print ("views.py::get_result_data: search_stats_tuple = ",search_stats_tuple);
+        print ("views.py::get_population_data: search_stats_tuple = ",search_stats_tuple);
 
         #hardcode
-        sql_template2 = "SELECT tab.g1, tab.g2, tab.g3, tab.g4, tab.g5, tab.g6, tab.g7, tab.g8, tab.g9 " \
+        sql_template2 = "SELECT tab.g1, tab.g2, tab.g3, tab.g4, tab.g5, tab.g6, tab.g7, tab.g8, tab.g9, " \
+            "tab.g10, tab.g11, tab.g12, tab.g13, tab.g14, tab.g15, tab.g16, tab.g17, tab.g18, tab.g19, " \
+            "tab.g20, tab.g21, tab.g22, tab.g23, tab.g24, tab.g25, tab.g26, tab.g27, tab.g28, tab.g29, " \
+            "tab.g30, tab.g31, tab.g32, tab.g33, tab.g34, tab.g35, tab.g36 " \
               "FROM {0}.%s_%s AS tab " \
               "WHERE tab.region_id = '%s'" \
               .format('census_2016_data')
@@ -301,15 +317,46 @@ def get_result_data(InputSSC, InputSuburb):
         value_dict = dict(value_row);
         #print("views.py::get_result_metadata the result of sql2:",value_dict)
 
+        response2_list = []
         for response_item in response_dict:
-            if response_item["no"]<=9: #now only get the first 9 items. 9 is hardcode
-               for key, value in value_dict.items():
-                    if key == response_item["id"]:
-                        response_item["value"] = int(value)
-                        response_item["suburb"] = InputSuburb
-                        response_item["year"] = "2016"
+        # add more data to response_item 1:
+            response2_item = {}
+            response2_item["no"] = response_item["no"]
+            response2_item["id"] = response_item["id"]
+            response2_item["description"] = response_item["description"]
+            print(response_item["id"].lower());
+            # for total persons
+            if response_item["id"].lower() == "g3": 
+                table1 = []
+                table1.append(["suburb","year","value"])
+                table1.append([InputSuburb,"2016",int(value_dict["g3"])])
+                print("enter",table1);
+                response2_item['numoftable'] = 1
+                response2_item['table'] = [table1]
+                response2_item['numofchart'] = 1
+            # for total males    
+            elif response_item["id"].lower() == "g2": 
+                table1 = []
+                table1.append(["suburb","year","value"])
+                table1.append([InputSuburb,"2016",int(value_dict["g2"])])
+                print("enter",table1);
+                response2_item['numoftable'] = 1
+                response2_item['table'] = [table1]
+                response2_item['numofchart'] = 1
+            # for total females    
+            elif response_item["id"].lower() == "g1": 
+                table1 = []
+                table1.append(["suburb","year","value"])
+                table1.append([InputSuburb,"2016",int(value_dict["g1"])])
+                print("enter",table1);
+                response2_item['numoftable'] = 1
+                response2_item['table'] = [table1]
+                response2_item['numofchart'] = 1
 
-    return response_dict;
+            response2_list.append(response2_item)
+
+    print(response2_list);    
+    return response2_list;
 
 @main.route('/autocomplete', methods=['GET'])
 def autocomplete():
@@ -595,3 +642,77 @@ def get_data():
 #########################################
 ## The above codes are for maps
 #########################################
+
+
+@main.route("/chart/<int:bars_count>/")
+def chart(bars_count):
+    """Try to show chart"""
+    if bars_count <= 0:
+        bars_count = 1
+
+    data = {"days": [], "bugs": [], "costs": []}
+    for i in range(1, bars_count + 1):
+        data['days'].append(i)
+        data['bugs'].append(random.randint(1,100))
+        data['costs'].append(random.uniform(1.00, 1000.00))
+
+    hover = create_hover_tool()
+    plot = create_bar_chart(data, "Bugs found per day", "days",
+                            "bugs", hover)
+    script, div = components(plot)
+
+    return render_template("chart.html", bars_count=bars_count,
+                           the_div=div, the_script=script)
+
+def create_hover_tool():
+    """Generates the HTML for the Bokeh's hover data tool on our graph."""
+    hover_html = """
+      <div>
+        <span class="hover-tooltip">$x</span>
+      </div>
+      <div>
+        <span class="hover-tooltip">@bugs bugs</span>
+      </div>
+      <div>
+        <span class="hover-tooltip">$@costs{0.00}</span>
+      </div>
+    """
+    return HoverTool(tooltips=hover_html)
+
+def create_bar_chart(data, title, x_name, y_name, hover_tool=None,
+                     width=1200, height=300):
+    """Creates a bar chart plot with the exact styling for the centcom
+       dashboard. Pass in data as a dictionary, desired plot title,
+       name of x axis, y axis and the hover tool HTML.
+    """
+    source = ColumnDataSource(data)
+    xdr = FactorRange(factors=data[x_name])
+    ydr = Range1d(start=0,end=max(data[y_name])*1.5)
+
+    tools = []
+    if hover_tool:
+        tools = [hover_tool,]
+
+    plot = figure(title=title, x_range=xdr, y_range=ydr, plot_width=width,
+                  plot_height=height, h_symmetry=False, v_symmetry=False,
+                  min_border=0, toolbar_location="above", tools=tools,
+                  responsive=True, outline_line_color="#666666")
+
+    glyph = VBar(x=x_name, top=y_name, bottom=0, width=.8,
+                 fill_color="#e12127")
+    plot.add_glyph(source, glyph)
+
+    xaxis = LinearAxis()
+    yaxis = LinearAxis()
+
+    plot.add_layout(Grid(dimension=0, ticker=xaxis.ticker))
+    plot.add_layout(Grid(dimension=1, ticker=yaxis.ticker))
+    plot.toolbar.logo = None
+    plot.min_border_top = 0
+    plot.xgrid.grid_line_color = None
+    plot.ygrid.grid_line_color = "#999999"
+    plot.yaxis.axis_label = "Bugs found"
+    plot.ygrid.grid_line_alpha = 0.1
+    plot.xaxis.axis_label = "Days after app deployment"
+    plot.xaxis.major_label_orientation = 1
+    return plot    
