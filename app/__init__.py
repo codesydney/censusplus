@@ -16,7 +16,9 @@ bootstrap = Bootstrap(app)
 from .main import main
 from .population import population
 from .birthrate import birthrate
+from .employmentrate import employmentrate
 
 app.register_blueprint(main,url_prefix='')
 app.register_blueprint(population,url_prefix='/population')
 app.register_blueprint(birthrate,url_prefix='/birthrate')
+app.register_blueprint(employmentrate,url_prefix='/employmentrate')
