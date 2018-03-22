@@ -62,16 +62,23 @@ def index():
                 return render_template('mainform.html', form=tryagainform)
 
             for row in rows:
-                InputSuburb = row['locality_name']
+                input_suburb = row['locality_name']
                 mb_2016_code = row['mb_2016_code']
 
             #get ssc code from mb code
             #I seperate this query from the above one 
             #because different year may have different correspondence between suburb and other area.
-            sql_template = "SELECT ms.ssc_code " \
+            # sql_template = "SELECT ms.ssc_code " \
+            #     "from {0}.mb_ssc_2016 as ms " \
+            #     "where mb_code_2016 = ( '%s') " \
+            #     .format('public')
+            # sql = pg_cur.mogrify(sql_template, (AsIs(mb_2016_code),))            
+            sql_template = "SELECT ms.ssc_code, ST_X(st_centroid(bdy.geom)) as lng, " \
+                "ST_Y(st_centroid(bdy.geom)) as lat " \
                 "from {0}.mb_ssc_2016 as ms " \
+                "INNER JOIN {1}.ssc AS bdy ON ms.ssc_code = bdy.id "\
                 "where mb_code_2016 = ( '%s') " \
-                .format('public')
+                .format('public', 'census_2016_web')
             sql = pg_cur.mogrify(sql_template, (AsIs(mb_2016_code),))            
 
             print("views.py::index line 154: ",end=' ')
@@ -90,20 +97,21 @@ def index():
                 return render_template('mainform.html', form=tryagainform)
 
             for row in rows:
-                InputSSC = row['ssc_code']
+                input_ssc = row['ssc_code']
+                suburb_center_lat = row['lat']
+                suburb_center_lng = row['lng']
 
-        print("view.py::index: InputSSC = "+InputSSC)
+        print("view.py::index: input_ssc = ",input_ssc,"lat=",suburb_center_lat,"lng=",suburb_center_lng)
 
         # get datailed population data.
-        result_data = get_population_data(InputSSC, InputSuburb);
+        result_data = get_population_data(input_ssc, input_suburb);
         
         return render_template('result.html',
-                                #resultform=resultform,
-                                InputSuburb=InputSuburb,
-                                #birth_rate_list=birth_rate_list,
-                                #population_list=population_list,
+                                input_suburb=input_suburb,
                                 mb_2016_code=mb_2016_code,
-                                InputSSC=InputSSC,
+                                input_ssc=input_ssc,
+                                suburb_center_lng=suburb_center_lng,
+                                suburb_center_lat=suburb_center_lat,
                                 result_data=result_data,
                                 mapstats="g1")                             
                                 

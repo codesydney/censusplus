@@ -33,7 +33,8 @@
 {% endblock %}
 
 {% block body_attribs %}
-onload="init('{{InputSuburb}}','{{mb_2016_code}}','{{InputSSC}}','{{mapstats}}');"
+onload="init('{{input_suburb}}','{{mb_2016_code}}','{{input_ssc}}','{{suburb_center_lng}}',
+'{{suburb_center_lat}}','{{mapstats}}');"
 {% endblock body_attribs %}
 
 {% block content %}
@@ -71,7 +72,7 @@ onload="init('{{InputSuburb}}','{{mb_2016_code}}','{{InputSSC}}','{{mapstats}}')
               <div class="row">
                   <div class="col-md-12">
                       <h4>
-                          Input Suburb: <strong>{{InputSuburb}}</strong>
+                          Input Suburb: <strong>{{input_suburb}}</strong>
                       </h4>
                   </div>
               </div>
@@ -84,7 +85,7 @@ onload="init('{{InputSuburb}}','{{mb_2016_code}}','{{InputSSC}}','{{mapstats}}')
         <div class="panel panel-default">
           <div class="panel-heading panel-heading-{{((item['no']-1)%3+1)|string}}" role="tab" id="headingThree">
             <h4 class="panel-title">
-              <a class="collapsed" onclick="init('{{InputSuburb}}','{{mb_2016_code}}','{{InputSSC}}',
+              <a class="collapsed" onclick="init('{{input_suburb}}','{{mb_2016_code}}','{{suburb_center_lng}}','{{suburb_center_lat}}','{{input_ssc}}',
               '{{item["id"]}}');" role="button" data-toggle="collapse" data-parent="#accordion" href="#collapse{{item['id']}}" aria-expanded="false" aria-controls="collapse{{item['id']}}">
                 {{item["description"]}}
               </a>

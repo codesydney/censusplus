@@ -106,14 +106,14 @@ if (!queryObj.stats) {
 }
 */
 
-function init(searchSuburb,mb_2016_code,InputSSC,mapstats) {
+function init(searchSuburb,mb_2016_code,InputSSC,suburb_center_lng,suburb_center_lat,mapstats) {
     console.log("loadmap.js::init: enter, paras="+searchSuburb+","+mb_2016_code+","+InputSSC+","+mapstats);
     
     // initial stat is the first one in the querystring
     //currentStatId = statsArray[0];
     currentStatId = mapstats.toLowerCase();
     inputSuburb = searchSuburb;
-
+    curMapCenter = new L.LatLng(suburb_center_lat, suburb_center_lng);
 
     // create colour ramp
     colourRamp = new Rainbow();
@@ -131,7 +131,8 @@ function init(searchSuburb,mb_2016_code,InputSSC,mapstats) {
     
     if (elem.getContext && elem.getContext("2d")) {
         map = new L.Map("datamap", { preferCanvas: true });
-    } else {
+    } 
+    else {
         map = new L.Map("datamap", { preferCanvas: false });
     }
     
@@ -204,7 +205,8 @@ function init(searchSuburb,mb_2016_code,InputSSC,mapstats) {
             // if no pop, nothing to display
             if (props.population === 0) {
                 infoStr += "<span class='highlight' style='background:#fff;'>no population</span>";
-            } else {
+            } 
+            else {
                 // // special case if value is total pop - convert to pop density
                 // var stat = 0;
                 // var type = "";
@@ -411,6 +413,9 @@ function getData(InputSSC) {
     var bb = map.getBounds();
     var sw = bb.getSouthWest();
     var ne = bb.getNorthEast();
+    var cc = map.getCenter();
+    var clat = cc.lat;
+    var clng = cc.lng;
 
     // build URL
     var ua = [];
@@ -423,6 +428,10 @@ function getData(InputSSC) {
     ua.push(ne.lng.toString());
     ua.push("&mt=");
     ua.push(ne.lat.toString());
+    ua.push("&clng=");
+    ua.push(clng.toString());
+    ua.push("&clat=");
+    ua.push(clat.toString());
     ua.push("&s=");
     ua.push(currentStat.id);
     ua.push("&t=");

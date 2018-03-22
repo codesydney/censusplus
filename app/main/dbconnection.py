@@ -10,7 +10,7 @@ SCHEMA_BDYS = "census_2016_bdys"
 SCHEMA_PUBLIC = "public"
 
 # create database connection pool
-
+'''
 pool = ThreadedConnectionPool(
     3, 5,
     database="d1l2hpefphgah3",
@@ -26,7 +26,7 @@ pool = ThreadedConnectionPool(
     password="123456",
     host="localhost",
     port=5432)
-'''
+
 
 @contextmanager
 def get_db_connection():

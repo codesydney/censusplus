@@ -23,7 +23,7 @@ def get_population_data(InputSSC, InputSuburb):
         #hardcode: 4
         #I only need G1 (total males), G2 (total females) and G3 (total persons) 
         #They are all in table: census_2016_data.ccs_g1
-        print ("views.py::get_population_data: search_stats_tuple = ",search_stats_tuple);
+        # print ("views.py::get_population_data: search_stats_tuple = ",search_stats_tuple);
 
         sql_template = "SELECT sequential_id AS id, " \
               "lower(table_number) AS \"table\", " \
@@ -107,7 +107,7 @@ def get_population_data(InputSSC, InputSuburb):
         #hardcode
         
 
-        print("===>views.py::get_result_metadata: sql2:", sql2)
+        # print("===>views.py::get_result_metadata: sql2:", sql2)
     
         try:
             pg_cur.execute(sql2)
@@ -133,7 +133,7 @@ def get_population_data(InputSSC, InputSuburb):
                 table1 = []
                 table1.append(["suburb","year","value"])
                 table1.append([InputSuburb,"2016",int(value_dict["g3"])])
-                print("enter",table1);
+                # print("enter",table1);
                 response2_item['numoftable'] = 1
                 response2_item['table'] = [table1]
                 response2_item['numofchart'] = 1
@@ -153,11 +153,11 @@ def get_population_data(InputSSC, InputSuburb):
                 table1 = []
                 table1.append(["suburb","year","value"])
                 table1.append([InputSuburb,"2016",int(value_dict["g2"])])
-                print("enter",table1);
+                # print("enter",table1);
                 response2_item['numoftable'] = 1
                 response2_item['table'] = [table1]
                 response2_item['numofchart'] = 1
-                #make chart
+                # make chart
                 x_values = [1,2,3,4,5,6,7,8,9,10,11]
                 x_labels = ["0-4","5-14","15-19","20-24","25-34","35-44","45-54","55-64","65-74","75-84",">85"]
                 y_values = [int(value_dict["g5"]),int(value_dict["g8"]),int(value_dict["g11"]),int(value_dict["g14"]), 
@@ -173,11 +173,11 @@ def get_population_data(InputSSC, InputSuburb):
                 table1 = []
                 table1.append(["suburb","year","value"])
                 table1.append([InputSuburb,"2016",int(value_dict["g1"])])
-                print("enter",table1);
+                # print("enter",table1);
                 response2_item['numoftable'] = 1
                 response2_item['table'] = [table1]
                 response2_item['numofchart'] = 1
-                #make chart
+                # make chart
                 x_values = [1,2,3,4,5,6,7,8,9,10,11]
                 x_labels = ["0-4","5-14","15-19","20-24","25-34","35-44","45-54","55-64","65-74","75-84",">85"]
                 y_values = [int(value_dict["g4"]),int(value_dict["g7"]),int(value_dict["g10"]),int(value_dict["g13"]), 
@@ -190,7 +190,7 @@ def get_population_data(InputSSC, InputSuburb):
 
             response2_list.append(response2_item)
 
-    print(response2_list);    
+    #print(response2_list);    
     return response2_list;
 
 def create_population_chart_g3(x_values,x_labels,y_values,filepath,filename):
