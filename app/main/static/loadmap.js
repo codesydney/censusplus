@@ -587,7 +587,7 @@ function style(feature) {
     //var col = "#FFF056";
 
     var returnStyle = {
-        weight : 1,
+        weight : 0,
         opacity : 0.8,
         color : "#fff",
         fillOpacity : 0.6,
@@ -643,7 +643,7 @@ function highlightFeature(e) {
 
         //var highlightColour = "#fff";
         var hightlightstyle = {
-            weight: 1,
+            weight: 0,
             color: "#fff",
             opacity: 0.8,
             fillOpacity : 0.1,
