@@ -73,6 +73,7 @@ def index():
             #     "where mb_code_2016 = ( '%s') " \
             #     .format('public')
             # sql = pg_cur.mogrify(sql_template, (AsIs(mb_2016_code),))            
+
             sql_template = "SELECT ms.ssc_code, ST_X(st_centroid(bdy.geom)) as lng, " \
                 "ST_Y(st_centroid(bdy.geom)) as lat " \
                 "from {0}.mb_ssc_2016 as ms " \
@@ -113,7 +114,7 @@ def index():
                                 suburb_center_lng=suburb_center_lng,
                                 suburb_center_lat=suburb_center_lat,
                                 result_data=result_data,
-                                mapstats="g1")                             
+                                mapstats="g3") #g3: population                             
                                 
     #elif resultform.validate_on_submit() and resultform.Submit2.data:   
          #return redirect(url_for('main.index'))
@@ -289,6 +290,8 @@ def get_metadata():
 
 @main.route("/get-data")
 def get_data():
+    """Get census data of every suburb in the scope of the map.
+    """
 
     full_start_time = datetime.now()
     # start_time = datetime.now()
@@ -305,8 +308,8 @@ def get_data():
     table_id = request.args.get('t')
     boundary_name = request.args.get('b')
     zoom_level = int(request.args.get('z'))
-    InputSSC = request.args.get('InputSSC')
-    #print("==>main/views.py::get_data: enter InputSSC="+InputSSC)
+    input_ssc = request.args.get('input_ssc')
+    #print("==>main/views.py::get_data: enter input_ssc="+input_ssc)
 
     # TODO: add support for equations
 
@@ -336,17 +339,34 @@ def get_data():
                                             AsIs(map_bottom), AsIs(map_right), AsIs(map_top)))
         '''
         #print("==>main/views.py::get_data: enter line 381")
+
+        #sql for entire Australia
+        # sql_template = "SELECT bdy.id, bdy.name, bdy.population, tab.%s / bdy.area AS density, " \
+        #       "CASE WHEN bdy.population > 0 THEN tab.%s / bdy.population * 100.0 ELSE 0 END AS percent, " \
+        #       "tab.%s, geojson_%s AS geometry " \
+        #       "FROM {0}.%s AS bdy " \
+        #       "INNER JOIN {1}.%s_%s AS tab ON bdy.id = tab.{2} " \
+        #       "WHERE bdy.geom && ST_MakeEnvelope(%s, %s, %s, %s, 4283) " \
+        #       .format('census_2016_web', 'census_2016_data', "region_id")
+
+        # sql for NSW
         sql_template = "SELECT bdy.id, bdy.name, bdy.population, tab.%s / bdy.area AS density, " \
               "CASE WHEN bdy.population > 0 THEN tab.%s / bdy.population * 100.0 ELSE 0 END AS percent, " \
               "tab.%s, geojson_%s AS geometry " \
               "FROM {0}.%s AS bdy " \
               "INNER JOIN {1}.%s_%s AS tab ON bdy.id = tab.{2} " \
-              "WHERE bdy.id = '%s'" \
-              .format('census_2016_web', 'census_2016_data', "region_id")
+              "INNER JOIN {3}.%s_2016_aust AS def on bdy.id = def.ssc_code16 " \
+              "WHERE bdy.geom && ST_MakeEnvelope(%s, %s, %s, %s, 4283) " \
+              "AND def.ste_code16 = '1' " \
+              .format('census_2016_web', 'census_2016_data', "region_id", "census_2016_bdys")
+        # "WHERE bdy.id = '%s'" \
         #print("==>main/views.py::get_data: enter line 389")
 
         sql = pg_cur.mogrify(sql_template, (AsIs(stat_id), AsIs(stat_id), AsIs(stat_id), AsIs(display_zoom),
-                                            AsIs(boundary_name), AsIs(boundary_name), AsIs(table_id), AsIs(InputSSC)))
+                                            AsIs(boundary_name), AsIs(boundary_name), 
+                                            AsIs(table_id), AsIs(boundary_name), 
+                                            AsIs(map_left),AsIs(map_bottom), AsIs(map_right), AsIs(map_top)))
+                                            #AsIs(input_ssc)))
 
         print("views.py::get_data: ",end=' ')
         print(sql)
@@ -384,6 +404,7 @@ def get_data():
                 feature_dict["geometry"] = ast.literal_eval(str(row[col]))
             elif col == 'id':
                 feature_dict["id"] = row[col]
+                properties_dict["id"]=row[col]
             else:
                 properties_dict[col] = row[col]
 

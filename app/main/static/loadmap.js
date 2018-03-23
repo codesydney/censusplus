@@ -21,6 +21,8 @@ var curMapCenter = new L.LatLng(-33.85, 151.15);
 //{lat: 151.12754999999999, lng: -33.88945}
 var hasInitMapPanTo = 0;
 
+// current searched ssc code
+var input_ssc;
 var statsArray = [];
 var currentStat; 
 //for example: {'id': 'g2', 'table': 'g01', 'description': 'Total Persons Females', 'type': 'Females', 'maptype': 'values'}]
@@ -36,8 +38,6 @@ var boundaryOverride = "";
 var currentBoundary = "";
 var currentBoundaryMin = 7;
 
-
-var highlightColour = "#ff0000";
 var lowPopColour = "#422";
 var colourRamp;
 //var colourRange = ["#1f1f1f", "#e45427"]; // dark grey > orange/red
@@ -106,11 +106,13 @@ if (!queryObj.stats) {
 }
 */
 
-function init(searchSuburb,mb_2016_code,InputSSC,suburb_center_lng,suburb_center_lat,mapstats) {
-    console.log("loadmap.js::init: enter, paras="+searchSuburb+","+mb_2016_code+","+InputSSC+","+mapstats);
+function init(searchSuburb,mb_2016_code,p_input_ssc,suburb_center_lng,suburb_center_lat,mapstats) {
+    console.log("loadmap.js::init: enter, paras="+searchSuburb+","+mb_2016_code+","+input_ssc+","
+        +suburb_center_lng+","+suburb_center_lat+","+mapstats);
     
+    input_ssc = p_input_ssc;
     // initial stat is the first one in the querystring
-    //currentStatId = statsArray[0];
+    //currentStatId = statsArray[0];    
     currentStatId = mapstats.toLowerCase();
     inputSuburb = searchSuburb;
     curMapCenter = new L.LatLng(suburb_center_lat, suburb_center_lng);
@@ -136,6 +138,8 @@ function init(searchSuburb,mb_2016_code,InputSSC,suburb_center_lng,suburb_center
         map = new L.Map("datamap", { preferCanvas: false });
     }
     
+    //disable mouse wheel 
+    map.scrollWheelZoom.disable();
 
     //map = new L.Map("datamap", { preferCanvas: false }); // canvas slows Safari down versus Chrome (IE & edge are untested)
 
@@ -194,19 +198,22 @@ function init(searchSuburb,mb_2016_code,InputSSC,suburb_center_lng,suburb_center
     };
     info.update = function (props, colour) {
         var infoStr;
-
+        console.log("loadmap.js::info.update: props=");
+        console.log(props);
         if (props) {
             // improve the formatting of multi-name bdys
-            var re = new RegExp(" - ", "g");
-            var name = props.name.replace(re, "<br/>");
+            //var re = new RegExp(" - ", "g");
+            //var name = props.name.replace(re, "<br/>");
+            var propsname = props.name.replace(/ *\([^)]*\) */g, "");
 
-            infoStr = "<span style='font-weight: bold; font-size:1em; background:#fff;'>" + inputSuburb + "</span><br/>";
+            //print hightlight suburb's name
+            infoStr = "<span style='font-weight: bold; font-size:1em; background:#fff;'>" + propsname + "</span><br/>";
 
             // if no pop, nothing to display
-            if (props.population === 0) {
-                infoStr += "<span class='highlight' style='background:#fff;'>no population</span>";
-            } 
-            else {
+            //if (props.population === 0) {
+            //    infoStr += "<span class='highlight' style='background:#fff;'>no population</span>";
+            //} 
+            //else {
                 // // special case if value is total pop - convert to pop density
                 // var stat = 0;
                 // var type = "";
@@ -221,12 +228,13 @@ function init(searchSuburb,mb_2016_code,InputSSC,suburb_center_lng,suburb_center
                 var type = currentStat.type;
                 var valStr = stringNumber(props[currentStatId], "values", type);
                 var popStr = stringNumber(props.population, "values", "dummy") + " persons";
-
+                //console.log("maptype"+currentStat.maptype);
 
                 if (currentStat.maptype === "values") {
                     var colour = getColor(props[currentStatId], 99999999); //dummy second value get's the right colour
                     infoStr += "<span class='highlight' style='background:#fff;'>" + type + ": " + valStr + "</span>"; //<br/>" + popStr;
-                } else { // "percent"
+                } 
+                else { // "percent"
                     var colour = getColor(props.percent, 99999999); //dummy second value get's the right colour
                     var percentStr = stringNumber(props.percent, "percent", type);
                     infoStr += "<span class='highlight' style='background:#fff;'>" + currentStat.description + ": " + percentStr + "</span>"; //<br/>" + valStr + " of " + popStr;
@@ -236,10 +244,11 @@ function init(searchSuburb,mb_2016_code,InputSSC,suburb_center_lng,suburb_center
                 //if (props.population <= currentBoundaryMin) {
                 //    infoStr += "<br/><span class='highlight' style='background:" + lowPopColour + "'>low population</span>";
                 //}
-            }
+            //}
         } 
         else {
-            infoStr ="pick a boundary";
+            infoStr ="<span style='font-weight: bold; font-size:1em; background:#fff;'>"+"Pick a boundary"
+                + "</span>";
         }
 
         this._div.innerHTML = infoStr;
@@ -269,7 +278,7 @@ function init(searchSuburb,mb_2016_code,InputSSC,suburb_center_lng,suburb_center
 
             // update stat metadata and map data
             getCurrentStatMetadata();
-            getData(InputSSC);
+            getData(input_ssc);
         });
     };
     themer.addTo(map);
@@ -310,13 +319,13 @@ function init(searchSuburb,mb_2016_code,InputSSC,suburb_center_lng,suburb_center
         info.addTo(map);
 
         // get the first lot of data
-        getData(InputSSC);
+        getData(input_ssc);
     });
 
     // get a new set of data when map panned or zoomed
     map.on("moveend", function () {
         //getCurrentStatMetadata(currentStats);
-        getData(InputSSC);
+        getData(input_ssc);
     });
 
 }
@@ -392,7 +401,7 @@ function stringNumber(val, mapType, type) {
 *called when init or moving map
 *call main/views.py::@main.route("/get-data") to get boundaries data
 ***********************************************************/
-function getData(InputSSC) {
+function getData(input_ssc) {
     console.log(currentStat);
     console.time("got boundaries");
 
@@ -413,9 +422,6 @@ function getData(InputSSC) {
     var bb = map.getBounds();
     var sw = bb.getSouthWest();
     var ne = bb.getNorthEast();
-    var cc = map.getCenter();
-    var clat = cc.lat;
-    var clng = cc.lng;
 
     // build URL
     var ua = [];
@@ -428,10 +434,6 @@ function getData(InputSSC) {
     ua.push(ne.lng.toString());
     ua.push("&mt=");
     ua.push(ne.lat.toString());
-    ua.push("&clng=");
-    ua.push(clng.toString());
-    ua.push("&clat=");
-    ua.push(clat.toString());
     ua.push("&s=");
     ua.push(currentStat.id);
     ua.push("&t=");
@@ -444,8 +446,8 @@ function getData(InputSSC) {
 //    ua.push(censusYear);
     ua.push("&z=");
     ua.push((currentZoomLevel).toString())
-    ua.push("&InputSSC=");
-    ua.push(InputSSC)
+    ua.push("&input_ssc=");
+    ua.push(input_ssc)
     ;
 
     var requestString = ua.join("");
@@ -528,6 +530,7 @@ function gotData(json) {
         //console.log("loadmap.js::gotData: json:"+json);
         //});
 
+        /*
         //center current suburb
         //console.log("loadmap.js::gotData: curCenter = ");
         var curPolygon = L.polygon(json.features[0].geometry.coordinates);
@@ -537,7 +540,7 @@ function gotData(json) {
         //console.log(curMapCenter);
         //put the input subsurb in the center of map
         initMapPanTo(curMapCenter);
-
+        */
     } 
     else {
         alert("No data returned!")
@@ -548,27 +551,58 @@ function gotData(json) {
 
 }
 
+//Set the style of suburbs.
 function style(feature) {
-    /*
+    
     var renderVal;
     var props = feature.properties;
 
     if (currentStat.maptype === "values") {
         renderVal = props[currentStatId];
-    } else {
+    } 
+    else {
         renderVal = props.percent;
     }
-    */
-    //var col = getColor(renderVal, props.population);
-    var col = "#FFF056";
+    
+    //hardcode
+    var max = 60000;
+    var min = 0;
+    if(currentStatId === 'g3'){
+        max = 45000; //50474;
+        //min = 1000;
+    }
+    else if(currentStatId === 'g2'){
+        max = 22000; //25734;
+        //min = 500; 
+    }
+    else if(currentStatId === 'g1'){
+        max = 22000; //25296;
+        //min = 500;
+    }
+    //console.log("loadmap.js::style"+input_ssc+", "+max.toString());
 
-    return {
-        weight : 2,
+    var colorDegree = Math.min(renderVal/max,1.0);
+    var col = heatMapColorforValue(colorDegree);
+    //var col = getColor(renderVal, props.population);
+    //var col = "#FFF056";
+
+    var returnStyle = {
+        weight : 1,
         opacity : 0.8,
-        color : "#b30000",
-        fillOpacity : 0.3,
-        fillColor : "#FFF056"
+        color : "#fff",
+        fillOpacity : 0.6,
+        fillColor : col //"#FFF056"
     };
+    if(props['id'] === input_ssc){
+        returnStyle = {
+                weight : 2,
+                opacity : 0.8,
+                color : "#b30000",
+                fillOpacity : 0.6,
+                fillColor : col //"#FFF056"
+            };
+    }
+    return returnStyle;
 }
 
 // get color depending on ratio of count versus max value
@@ -596,24 +630,36 @@ function onEachFeature(feature, layer) {
     });
 }
 
+//Set the style of the highlight suburb.
 function highlightFeature(e) {
     if (currLayer !== undefined) {
         geojsonLayer.resetStyle(currLayer);
     }
 
     currLayer = e.target;
+    var props = currLayer.feature.properties;
 
     if (currLayer !== undefined) {
 
-        currLayer.setStyle({
-            weight: 2.5,
+        //var highlightColour = "#fff";
+        var hightlightstyle = {
+            weight: 1,
+            color: "#fff",
             opacity: 0.8,
             fillOpacity : 0.1,
-            color: highlightColour
-        });
+            }
+        if(props['id'] === input_ssc){
+            hightlightstyle = {
+                weight: 2,
+                color: "#b30000",
+                opacity: 0.8,
+                fillOpacity : 0.1,
+                }
+        }
+        currLayer.setStyle(hightlightstyle);
 
         //    if (!L.Browser.ie && !L.Browser.edge && !L.Browser.opera) {
-        currLayer.bringToFront();
+        //currLayer.bringToFront();
         //    }
         //console.log("loadmap.js::highlightFeature:");
         //console.log(currentStatId);
@@ -630,3 +676,41 @@ function resetHighlight(e) {
 // function zoomToFeature(e) {
 //    map.fitBounds(e.target.getBounds());
 // }
+
+
+//the value is in [0,1]
+function heatMapColorforValue(value){
+    var h = (1.0 - value) * 240
+    return hslToHex(h,100,50)
+  //return "hsl(" + h + ", 100%, 50%)";
+}
+
+//convert hsl to rgb
+function hslToHex(h, s, l) {
+  h /= 360;
+  s /= 100;
+  l /= 100;
+  let r, g, b;
+  if (s === 0) {
+    r = g = b = l; // achromatic
+  } else {
+    const hue2rgb = (p, q, t) => {
+      if (t < 0) t += 1;
+      if (t > 1) t -= 1;
+      if (t < 1 / 6) return p + (q - p) * 6 * t;
+      if (t < 1 / 2) return q;
+      if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+      return p;
+    };
+    const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+    const p = 2 * l - q;
+    r = hue2rgb(p, q, h + 1 / 3);
+    g = hue2rgb(p, q, h);
+    b = hue2rgb(p, q, h - 1 / 3);
+  }
+  const toHex = x => {
+    const hex = Math.round(x * 255).toString(16);
+    return hex.length === 1 ? '0' + hex : hex;
+  };
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+}

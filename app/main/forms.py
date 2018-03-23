@@ -13,4 +13,4 @@ class MainForm(FlaskForm):
 class TryAgainForm(FlaskForm):
     InputAddress = StringField('Address not found. Please try again.', \
                     [validators.Required("Search for your address")])
-    Submit1 = SubmitField('Try again',render_kw={"size":"90"})
+    Submit1 = SubmitField('GO',render_kw={"size":"90"})
