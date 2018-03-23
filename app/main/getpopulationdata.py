@@ -23,7 +23,7 @@ def get_population_data(InputSSC, InputSuburb):
         #hardcode: 4
         #I only need G1 (total males), G2 (total females) and G3 (total persons) 
         #They are all in table: census_2016_data.ccs_g1
-        # print ("views.py::get_population_data: search_stats_tuple = ",search_stats_tuple);
+        # print ("getpopulationdata.py::get_population_data: search_stats_tuple = ",search_stats_tuple);
 
         sql_template = "SELECT sequential_id AS id, " \
               "lower(table_number) AS \"table\", " \
@@ -36,7 +36,7 @@ def get_population_data(InputSSC, InputSuburb):
 
         sql = pg_cur.mogrify(sql_template, (AsIs(search_stats_tuple),)) 
 
-        print("===>views.py::get_population_data: sql:", sql)
+        print("===>getpopulationdata.py::get_population_data: sql:", sql)
     
         try:
             #pg_cur.execute(sql, (search_stats_tuple,))
@@ -89,9 +89,9 @@ def get_population_data(InputSSC, InputSuburb):
     with get_db_cursor() as pg_cur:
 
         search_stats_tuple = tuple(["G"+str(no) for no in range(1,10)]) 
-        #hardcode: 10
-        #the max value can be set up to 109. They are all in table: census_2016_data.ccs_g1
-        print ("views.py::get_population_data: search_stats_tuple = ",search_stats_tuple);
+        # hardcode: 10
+        # the max value can be set up to 109. They are all in table: census_2016_data.ccs_g1
+        # print ("getpopulationdata.py::get_population_data: search_stats_tuple = ",search_stats_tuple);
 
         #hardcode
         sql_template2 = "SELECT tab.g1, tab.g2, tab.g3, tab.g4, tab.g5, tab.g6, tab.g7, tab.g8, tab.g9, " \
@@ -101,13 +101,13 @@ def get_population_data(InputSSC, InputSuburb):
               "FROM {0}.%s_%s AS tab " \
               "WHERE tab.region_id = '%s'" \
               .format('census_2016_data')
-        #print("==>main/views.py::get_data: enter line 389")
+        #print("==>main/getpopulationdata.py::get_data: enter line 389")
 
         sql2 = pg_cur.mogrify(sql_template2, (AsIs("ssc"), AsIs("g01"), AsIs(InputSSC)))
         #hardcode
         
 
-        # print("===>views.py::get_result_metadata: sql2:", sql2)
+        # print("===>getpopulationdata.py::get_result_metadata: sql2:", sql2)
     
         try:
             pg_cur.execute(sql2)
@@ -118,7 +118,7 @@ def get_population_data(InputSSC, InputSuburb):
         value_row = pg_cur.fetchone()
     
         value_dict = dict(value_row);
-        #print("views.py::get_result_metadata the result of sql2:",value_dict)
+        #print("getpopulationdata.py::get_result_metadata the result of sql2:",value_dict)
 
         response2_list = []
         for response_item in response_dict:

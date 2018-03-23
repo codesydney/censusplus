@@ -85,7 +85,8 @@ onload="init('{{input_suburb}}','{{mb_2016_code}}','{{input_ssc}}','{{suburb_cen
         <div class="panel panel-default">
           <div class="panel-heading panel-heading-{{((item['no']-1)%3+1)|string}}" role="tab" id="headingThree">
             <h4 class="panel-title">
-              <a class="collapsed" onclick="init('{{input_suburb}}','{{mb_2016_code}}','{{suburb_center_lng}}','{{suburb_center_lat}}','{{input_ssc}}',
+              <a class="collapsed" onclick="init('{{input_suburb}}','{{mb_2016_code}}','{{input_ssc}}',
+                '{{suburb_center_lng}}','{{suburb_center_lat}}',
               '{{item["id"]}}');" role="button" data-toggle="collapse" data-parent="#accordion" href="#collapse{{item['id']}}" aria-expanded="false" aria-controls="collapse{{item['id']}}">
                 {{item["description"]}}
               </a>
@@ -140,8 +141,7 @@ onload="init('{{input_suburb}}','{{mb_2016_code}}','{{input_ssc}}','{{suburb_cen
     </div><!--div class="col-sm-6 col-lg-5"-->
 
 
-    <div class="col-xs-12 col-sm-6 col-lg-7" id="map-parent">   
-        <h4>Suburb Map</h4>
+    <div class="col-xs-12 col-sm-6 col-lg-7" id="map-parent">
         <div id="datamap"></div>
     </div>
   </div>
