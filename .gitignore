@@ -9,6 +9,9 @@ __pycache__/
 *.pyc
 *.py[cod]
 
+#pycharm files
+.idea/
+
 *$py.class
 
 # Bower dependency directory (https://bower.io/)

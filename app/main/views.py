@@ -155,7 +155,30 @@ def autocomplete():
 def about():
     """about page
     """
-    return render_template('about.html');
+
+    contributors=[]
+
+    person_001 = {
+                'name': 'Bin Liu (Lead Programmer)',
+                'link': 'https://github.com/Interest1024'}
+    contributors.append(person_001)
+
+    person_002 = {
+                'name': 'Engramar Bollas',
+                'link': 'https://github.com/engramar'}
+    contributors.append(person_002)
+
+    person_003 = {
+                'name': 'Jagrati Paranjpe',
+                'link': 'https://github.com/jagratiparanjpe'}
+    contributors.append(person_003)
+
+    person_004 = {
+                'name': 'Albert Molina',
+                'link': 'https://github.com/IamTheVine'}
+    contributors.append(person_004)
+
+    return render_template('about.html', contributors = contributors);
 
 
 #######################################
